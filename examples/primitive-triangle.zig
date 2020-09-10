@@ -34,7 +34,7 @@ fn resizeCallback(handle: ?*c_void, w: i32, h: i32) void {
     kira_gl.viewport(0, 0, w, h);
 }
 
-pub fn main() anyerror!void {
+pub fn main() !void {
     try kira_utils.initTimer();
     defer kira_utils.deinitTimer();
 

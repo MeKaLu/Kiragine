@@ -21,7 +21,7 @@ fn keyboardCallback(handle: ?*c_void, key: i32, sc: i32, ac: i32, mods: i32) voi
     input.handleKeyboard(key, ac) catch unreachable;
 }
 
-pub fn main() anyerror!void {
+pub fn main() !void {
     try kira_utils.initTimer();
     defer kira_utils.deinitTimer();
 

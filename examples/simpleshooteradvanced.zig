@@ -62,7 +62,7 @@ const BulletFactory = struct {
         }
     }
 
-    pub fn draw(self: BulletFactory, batch: *Batch) anyerror!void {
+    pub fn draw(self: BulletFactory, batch: *Batch) !void {
         var i: u32 = 0;
         while (i < maxcount) : (i += 1) {
             if (self.list[i].alive) {
@@ -83,7 +83,7 @@ const BulletFactory = struct {
         }
     }
 
-    pub fn add(self: *BulletFactory, bullet: Bullet) anyerror!void {
+    pub fn add(self: *BulletFactory, bullet: Bullet) !void {
         var i: u32 = 0;
         while (i < maxcount) : (i += 1) {
             if (!self.list[i].alive) {
@@ -181,7 +181,7 @@ fn submitFn(self: *Batch, vertex: [Batch.max_vertex_count]Vertex) renderer.Error
     self.submission_counter += 1;
 }
 
-pub fn main() anyerror!void {
+pub fn main() !void {
     try utils.initTimer();
     defer utils.deinitTimer();
 
@@ -246,9 +246,9 @@ pub fn main() anyerror!void {
     while (win_running) {
         frametime.start();
         {
-            const keyA = inp.keyState('A');
-            const keyD = inp.keyState('D');
-            const keyF = inp.keyState('F');
+            const keyA = try inp.keyState('A');
+            const keyD = try inp.keyState('D');
+            const keyF = try inp.keyState('F');
 
             const acc = 50.0;
             const maxspd = 300.0;
@@ -281,7 +281,7 @@ pub fn main() anyerror!void {
                     player.firecount -= 1;
                     try utils.printEndl(utils.LogLevel.trace, "player: fire({})", .{player.firecount});
                     playerbulletfactory.add(bullet) catch |err| {
-                        if (err == utils.Error.KiraCheck) {
+                        if (err == utils.Error.CheckFailed) {
                             player.firecount += 1;
                         }
                     };

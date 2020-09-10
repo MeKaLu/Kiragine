@@ -1,5 +1,6 @@
 # Kiragine
-Dependency-free game engine written in zig(compatible with master branch)
+Game engine written in zig(compatible with master branch)
+No external dependencies required
 
 ## How to compile?
 Download this github repo and copy the "libbuild.zig" file to your project for zig's build system
@@ -25,15 +26,17 @@ pub fn build(b: *Builder) void {
 
 #### Basic engine initialization
 ```zig
-
+const std = @import("std");
 const engine = @import("kiragine");
 
 const windowWidth = 1024;
 const windowHeight = 768;
 const targetfps = 60;
 
+var allocator = std.heap.page_allocator;
+
 pub fn main() anyerror!void {
-  try engine.init(null, null, null, windowWidth, windowHeight, "title", targetfps);
+  try engine.init(null, null, null, windowWidth, windowHeight, "title", targetfps, allocator);
 
   try engine.open();
   try engine.update();
@@ -45,7 +48,7 @@ pub fn main() anyerror!void {
 
 #### Basic engine initialization with game loops
 ```zig
-
+const std = @import("std");
 const engine = @import("kiragine");
 
 const windowWidth = 1024;
@@ -65,8 +68,10 @@ fn draw() anyerror!void {
   // Draw calls 
 }
 
+var allocator = std.heap.page_allocator;
+
 pub fn main() anyerror!void {
-  try engine.init(update, fixedUpdate, draw, windowWidth, windowHeight, "title", targetfps);
+  try engine.init(update, fixedUpdate, draw, windowWidth, windowHeight, "title", targetfps, allocator);
 
   try engine.open();
   try engine.update();

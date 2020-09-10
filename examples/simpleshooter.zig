@@ -10,7 +10,7 @@ const Ship = struct {
     size: engine.Vec2f = engine.Vec2f{},
     colour: engine.Colour = engine.Colour.rgba(255, 255, 255, 255),
 
-    pub fn draw(self: Ship) anyerror!void {
+    pub fn draw(self: Ship) !void {
         const triangle = [3]engine.Vec2f{
             .{ .x = self.position.x, .y = self.position.y },
             .{ .x = self.position.x + (self.size.x / 2), .y = self.position.y - self.size.y },
@@ -27,7 +27,7 @@ const Bullet = struct {
     colour: engine.Colour = engine.Colour.rgba(255, 255, 255, 255),
     alive: bool = false,
 
-    pub fn draw(self: Bullet) anyerror!void {
+    pub fn draw(self: Bullet) !void {
         try engine.drawRectangle(.{ .x = self.position.x, .y = self.position.y, .width = self.size.x, .height = self.size.y }, self.colour);
     }
 };
@@ -43,7 +43,7 @@ const BulletFactory = struct {
         }
     }
 
-    pub fn draw(self: BulletFactory) anyerror!void {
+    pub fn draw(self: BulletFactory) !void {
         var i: u32 = 0;
         while (i < maxcount) : (i += 1) {
             if (self.list[i].alive) {
@@ -64,7 +64,7 @@ const BulletFactory = struct {
         }
     }
 
-    pub fn add(self: *BulletFactory, bullet: Bullet) anyerror!void {
+    pub fn add(self: *BulletFactory, bullet: Bullet) !void {
         var i: u32 = 0;
         while (i < maxcount) : (i += 1) {
             if (!self.list[i].alive) {
@@ -93,9 +93,9 @@ var player = Ship{
 };
 var playerbulletfactory = BulletFactory{};
 
-fn update(deltatime: f32) anyerror!void {
+fn update(deltatime: f32) !void {
     {
-        const keyF = input.keyState('F');
+        const keyF = try input.keyState('F');
         const bullet = Bullet{
             .size = .{ .x = 10, .y = 10 },
             .position = .{ .x = player.position.x + player.size.x / 2 - 5, .y = player.position.y - player.size.y },
@@ -112,7 +112,7 @@ fn update(deltatime: f32) anyerror!void {
                 try engine.printEndl(engine.LogLevel.trace, "player: fire({})", .{player.firecount});
 
                 playerbulletfactory.add(bullet) catch |err| {
-                    if (err == engine.LogError.KiraCheck) {
+                    if (err == engine.LogError.CheckFailed) {
                         player.firecount += 1;
                     }
                 };
@@ -121,10 +121,10 @@ fn update(deltatime: f32) anyerror!void {
     }
 }
 
-fn fixedUpdate(fixedtime: f32) anyerror!void {
+fn fixedUpdate(fixedtime: f32) !void {
     {
-        const keyA = input.keyState('A');
-        const keyD = input.keyState('D');
+        const keyA = try input.keyState('A');
+        const keyD = try input.keyState('D');
 
         const acc = 50.0;
         const maxspd = 300.0;
@@ -150,7 +150,7 @@ fn fixedUpdate(fixedtime: f32) anyerror!void {
     playerbulletfactory.update(fixedtime);
 }
 
-fn draw() anyerror!void {
+fn draw() !void {
     engine.clearScreen(0.1, 0.1, 0.1, 1.0);
 
     try engine.pushBatch2D(engine.Renderer2DBatchTag.triangles);
@@ -161,8 +161,8 @@ fn draw() anyerror!void {
     try engine.popBatch2D();
 }
 
-pub fn main() anyerror!void {
-    try engine.init(update, fixedUpdate, draw, windowWidth, windowHeight, "simple shooter", 75);
+pub fn main() !void {
+    try engine.init(update, fixedUpdate, draw, windowWidth, windowHeight, "simple shooter", 75, std.heap.page_allocator);
 
     input = engine.getInput();
     try input.bindKey('D');

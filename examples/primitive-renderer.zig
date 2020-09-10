@@ -85,7 +85,7 @@ fn submitFn(self: *Batch, vertex: [Batch.max_vertex_count]Vertex) kira_renderer.
     self.submission_counter += 1;
 }
 
-pub fn main() anyerror!void {
+pub fn main() !void {
     try kira_utils.initTimer();
     defer kira_utils.deinitTimer();
 

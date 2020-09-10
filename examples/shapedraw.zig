@@ -6,7 +6,7 @@ const windowHeight = 768;
 const title = "Shapes";
 const targetfps = 60;
 
-fn draw() anyerror!void {
+fn draw() !void {
     engine.clearScreen(0.1, 0.1, 0.1, 1.0);
 
     // Push the pixel batch, it can't be mixed with any other
@@ -30,7 +30,7 @@ fn draw() anyerror!void {
     // Push the triangle batch, it can be mixed with quad batch
     try engine.pushBatch2D(engine.Renderer2DBatchTag.triangles);
     // or
-    // try engine.pushBatch2D(engine.Renderer2DBatchTag.quad);
+    // try engine.pushBatch2D(engine.Renderer2DBatchTag.quads);
 
     const triangle = [3]engine.Vec2f{
         .{ .x = 100, .y = 100 },
@@ -51,8 +51,8 @@ fn draw() anyerror!void {
     try engine.popBatch2D();
 }
 
-pub fn main() anyerror!void {
-    try engine.init(null, null, draw, windowWidth, windowHeight, title, targetfps);
+pub fn main() !void {
+    try engine.init(null, null, draw, windowWidth, windowHeight, title, targetfps, std.heap.page_allocator);
 
     try engine.open();
     try engine.update();
