@@ -1,0 +1,7 @@
+build
+zig-cache
+vscode
+build_runner.zig
+src/.vscode
+.ccls-cache/
+kiragine.log
