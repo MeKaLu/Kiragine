@@ -1,10 +1,12 @@
 # Kiragine
 Game engine written in zig(compatible with master branch)
+
 No external dependencies required
 
 ## How to compile?
 Download this github repo and copy the "libbuild.zig" file to your project for zig's build system
-After that all you need to do:
+
+After that all you need to do put this code in `build.zig` file:
 ```zig
 const Builder = @import("std").build.Builder;
 
@@ -80,3 +82,9 @@ pub fn main() anyerror!void {
 }
 
 ```
+
+#### About release cycle
+* Versioning: major.minor.patch
+* Every x.x.3 creates a new minor, which becomes x.(x + 1).0 
+* Again every x.3.x creates a new major, which becomes (x + 1).0.x
+* When a minor gets created, there will be a new release 
