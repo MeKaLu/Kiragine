@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.0.0              |
+// |           Kiragine 1.0.1              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -65,7 +65,18 @@ pub const Colour = renderer.ColourGeneric(f32);
 pub const UColour = renderer.ColourGeneric(u8);
 
 /// Error set
-pub const Error = error{ EngineIsNotInitialized, EngineIsInitialized, InvalidBatch, FailedToLoadTexture, FailedToDraw, InvalidRendererTag };
+pub const Error = error{
+    /// Engine is not initialized, initialize it before using the engine
+    EngineIsNotInitialized,
+    /// Engine is initialized, cannot initialize it again
+    EngineIsInitialized,
+    /// Current batch cannot able to do thing you are just about to do
+    InvalidBatch,
+    /// Failes to load texture
+    FailedToLoadTexture,
+    /// Current batch has filled, cannot able to draw anymore
+    FailedToDraw,
+};
 
 pub const Rectangle = struct {
     x: f32 = 0,
@@ -75,13 +86,12 @@ pub const Rectangle = struct {
 };
 
 pub const Renderer2DBatchTag = enum {
-    none,
     pixels,
     lines,
     /// Triangle & rectangle draw can also be used in non-textured quad batch
     triangles,
     /// Triangle & rectangle draw can also be used in non-textured quad batch
-    quad,
+    quads,
 };
 
 pub const Texture = struct {
@@ -101,7 +111,7 @@ pub const Texture = struct {
     }
 
     /// Creates a texture from png file
-    pub fn createFromPNG(path: []const u8) anyerror!Texture {
+    pub fn createFromPNG(path: []const u8) !Texture {
         var result = Texture{};
         result.loadSetup();
         defer gl.textureBind(gl.TextureType.t2D, 0);
@@ -120,7 +130,7 @@ pub const Texture = struct {
     }
 
     /// Creates a texture from png memory
-    pub fn createFromPNGMemory(mem: []const u8) anyerror!Texture {
+    pub fn createFromPNGMemory(mem: []const u8) !Texture {
         var result = Texture{};
         result.loadSetup();
         defer gl.textureBind(gl.TextureType.t2D, 0);
@@ -163,7 +173,7 @@ const Renderer2D = struct {
     notextureshader: u32 = 0,
     textureshader: u32 = 0,
     current_texture: Texture = Texture{},
-    tag: Renderer2DBatchTag = Renderer2DBatchTag.none,
+    tag: Renderer2DBatchTag = Renderer2DBatchTag.quads,
     textured: bool = false,
 };
 
@@ -346,18 +356,21 @@ var ptargetfps: f64 = 0.0;
 
 var prenderer2D: *Renderer2D = undefined;
 
+// error: inferring error set of return type valid only for function definitions
+// var pupdateproc: ?fn (deltatime: f32) !void = null;
+//                                       ^
+
 var pupdateproc: ?fn (deltatime: f32) anyerror!void = null;
 var pfixedupdateproc: ?fn (fixedtime: f32) anyerror!void = null;
 var pdraw2dproc: ?fn () anyerror!void = null;
 
-var parena_alloc: std.heap.ArenaAllocator = undefined;
+var allocator: *std.mem.Allocator = undefined;
 
 /// Initializes the engine
-pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fixedtime: f32) anyerror!void, draw2dfn: ?fn () anyerror!void, width: i32, height: i32, title: []const u8, fpslimit: u32) anyerror!void {
+pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fixedtime: f32) anyerror!void, draw2dfn: ?fn () anyerror!void, width: i32, height: i32, title: []const u8, fpslimit: u32, alloc: *std.mem.Allocator) !void {
     if (pengineready) return Error.EngineIsInitialized;
 
-    parena_alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    var allocator = &parena_alloc.allocator;
+    allocator = alloc;
 
     pwin = try allocator.create(Window);
     pinput = try allocator.create(Input);
@@ -406,8 +419,8 @@ pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fi
     prenderer2D.* = Renderer2D{};
     prenderer2D.cam.ortho = Mat4x4f.ortho(0, @intToFloat(f32, pwin.size.width), @intToFloat(f32, pwin.size.height), 0, -1, 1);
 
-    prenderer2D.notextureshader = try gl.shaderProgramCreate(std.heap.page_allocator, pnotexture_vertex_shader, pnotexture_fragment_shader);
-    prenderer2D.textureshader = try gl.shaderProgramCreate(std.heap.page_allocator, ptexture_vertex_shader, ptexture_fragment_shader);
+    prenderer2D.notextureshader = try gl.shaderProgramCreate(allocator, pnotexture_vertex_shader, pnotexture_fragment_shader);
+    prenderer2D.textureshader = try gl.shaderProgramCreate(allocator, ptexture_vertex_shader, ptexture_fragment_shader);
 
     try prenderer2D.quadbatch_notexture.create(prenderer2D.notextureshader, pnoTextureShaderAttribs);
     try prenderer2D.quadbatch_texture.create(prenderer2D.textureshader, pTextureShaderAttribs);
@@ -422,7 +435,7 @@ pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fi
 }
 
 /// Deinitializes the engine
-pub fn deinit() anyerror!void {
+pub fn deinit() !void {
     if (!pengineready) return Error.EngineIsNotInitialized;
 
     prenderer2D.quadbatch_notexture.destroy();
@@ -439,23 +452,25 @@ pub fn deinit() anyerror!void {
     try utils.check(utils.logCloseFile() == false, "kiragine -> failed to close log file!", .{});
     utils.deinitTimer();
 
-    parena_alloc.deinit();
+    allocator.destroy(pwin);
+    allocator.destroy(pinput);
+    allocator.destroy(prenderer2D);
 }
 
 /// Opens the whole engine
-pub fn open() anyerror!void {
+pub fn open() !void {
     if (!pengineready) return Error.EngineIsNotInitialized;
     pwinrun = true;
 }
 
 /// Closes the whole engine
-pub fn close() anyerror!void {
+pub fn close() !void {
     if (!pengineready) return Error.EngineIsNotInitialized;
     pwinrun = false;
 }
 
 /// Updates the engine
-pub fn update() anyerror!void {
+pub fn update() !void {
     if (!pengineready) return Error.EngineIsNotInitialized;
 
     // Source: https://gafferongames.com/post/fix_your_timestep/
@@ -546,13 +561,10 @@ pub fn disableTextureBatch2D() void {
 }
 
 /// Pushes the batch
-pub fn pushBatch2D(tag: Renderer2DBatchTag) anyerror!void {
+pub fn pushBatch2D(tag: Renderer2DBatchTag) !void {
     prenderer2D.tag = tag;
 
     switch (prenderer2D.tag) {
-        Renderer2DBatchTag.none => {
-            return Error.InvalidRendererTag;
-        },
         Renderer2DBatchTag.pixels => {
             if (prenderer2D.textured) return Error.InvalidBatch; // No textured lines
             prenderer2D.quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
@@ -565,7 +577,7 @@ pub fn pushBatch2D(tag: Renderer2DBatchTag) anyerror!void {
             if (prenderer2D.textured) return Error.InvalidBatch; // No textured triangle
             prenderer2D.quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
         },
-        Renderer2DBatchTag.quad => {
+        Renderer2DBatchTag.quads => {
             prenderer2D.quadbatch_texture.submitfn = pTextureSubmitQuadfn;
             prenderer2D.quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
         },
@@ -594,13 +606,12 @@ pub fn pushBatch2D(tag: Renderer2DBatchTag) anyerror!void {
 }
 
 /// Pops the batch
-pub fn popBatch2D() anyerror!void {
+pub fn popBatch2D() !void {
     defer prenderer2D.cam.detach();
     defer prenderer2D.quadbatch_texture.submission_counter = 0;
     defer prenderer2D.quadbatch_notexture.submission_counter = 0;
 
     switch (prenderer2D.tag) {
-        Renderer2DBatchTag.none => {},
         Renderer2DBatchTag.pixels => {
             if (prenderer2D.textured) {
                 return Error.InvalidBatch;
@@ -624,7 +635,7 @@ pub fn popBatch2D() anyerror!void {
                 prenderer2D.quadbatch_notexture.index_list = undefined;
             }
         },
-        Renderer2DBatchTag.quad => {
+        Renderer2DBatchTag.quads => {
             if (prenderer2D.textured) {
                 gl.textureBind(gl.TextureType.t2D, prenderer2D.current_texture.id);
                 try prenderer2D.quadbatch_texture.draw(gl.DrawMode.triangles);
@@ -641,16 +652,16 @@ pub fn popBatch2D() anyerror!void {
 }
 
 /// Flushes the batch
-pub fn flushBatch2D() anyerror!void {
+pub fn flushBatch2D() !void {
     const tag = prenderer2D.tag;
     try popBatch2D();
     try pushBatch2D(tag);
 }
 
 /// Draws a pixel
-pub fn drawPixel(pixel: Vec2f, colour: Colour) anyerror!void {
+pub fn drawPixel(pixel: Vec2f, colour: Colour) !void {
     switch (prenderer2D.tag) {
-        Renderer2DBatchTag.quad, Renderer2DBatchTag.triangles, Renderer2DBatchTag.lines => {
+        Renderer2DBatchTag.quads, Renderer2DBatchTag.triangles, Renderer2DBatchTag.lines => {
             return Error.InvalidBatch;
         },
         else => {},
@@ -669,9 +680,9 @@ pub fn drawPixel(pixel: Vec2f, colour: Colour) anyerror!void {
 }
 
 /// Draws a line
-pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) anyerror!void {
+pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) !void {
     switch (prenderer2D.tag) {
-        Renderer2DBatchTag.quad, Renderer2DBatchTag.triangles => {
+        Renderer2DBatchTag.quads, Renderer2DBatchTag.triangles => {
             return Error.InvalidBatch;
         },
         else => {},
@@ -690,7 +701,7 @@ pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) anyerror!void {
 }
 
 /// Draws a triangle
-pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) anyerror!void {
+pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) !void {
     if (prenderer2D.textured) return Error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.lines => {
@@ -712,7 +723,7 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) anyer
 }
 
 /// Draws a rectangle
-pub fn drawRectangle(rect: Rectangle, colour: Colour) anyerror!void {
+pub fn drawRectangle(rect: Rectangle, colour: Colour) !void {
     const pos0 = Vec2f{ .x = rect.x, .y = rect.y };
     const pos1 = Vec2f{ .x = rect.x + rect.width, .y = rect.y };
     const pos2 = Vec2f{ .x = rect.x + rect.width, .y = rect.y + rect.height };
@@ -727,7 +738,7 @@ pub fn drawRectangle(rect: Rectangle, colour: Colour) anyerror!void {
 }
 
 /// Draws a rectangle lines
-pub fn drawRectangleLines(rect: Rectangle, colour: Colour) anyerror!void {
+pub fn drawRectangleLines(rect: Rectangle, colour: Colour) !void {
     try drawRectangle(.{ .x = rect.x, .y = rect.y, .width = rect.width, .height = 1 }, colour);
     try drawRectangle(.{ .x = rect.x + rect.width - 1, .y = rect.y + 1, .width = 1, .height = rect.height - 2 }, colour);
     try drawRectangle(.{ .x = rect.x, .y = rect.y + rect.height - 1, .width = rect.width, .height = 1 }, colour);
@@ -735,7 +746,7 @@ pub fn drawRectangleLines(rect: Rectangle, colour: Colour) anyerror!void {
 }
 
 /// Draws a rectangle rotated(rotation should be provided in radians)
-pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) anyerror!void {
+pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) !void {
     var matrix = ModelMatrix{};
     matrix.translate(rect.x, rect.y, 0);
     matrix.translate(origin.x, origin.y, 0);
@@ -761,7 +772,7 @@ pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colou
     };
 }
 
-fn pdrawRectangle(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, colour: Colour) anyerror!void {
+fn pdrawRectangle(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, colour: Colour) !void {
     if (prenderer2D.textured) return Error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.lines => {
@@ -778,7 +789,7 @@ fn pdrawRectangle(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, colour: Co
 }
 
 /// Draws a texture
-pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) anyerror!void {
+pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) !void {
     const pos0 = Vec2f{ .x = rect.x, .y = rect.y };
     const pos1 = Vec2f{ .x = rect.x + rect.width, .y = rect.y };
     const pos2 = Vec2f{ .x = rect.x + rect.width, .y = rect.y + rect.height };
@@ -793,7 +804,7 @@ pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) anyerror
 }
 
 /// Draws a texture(rotation should be provided in radians)
-pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) anyerror!void {
+pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) !void {
     var matrix = ModelMatrix{};
     matrix.translate(rect.x, rect.y, 0);
     matrix.translate(origin.x, origin.y, 0);
@@ -819,7 +830,7 @@ pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, ro
     };
 }
 
-fn pdrawTexture(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, srcrect: Rectangle, colour: Colour) anyerror!void {
+fn pdrawTexture(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, srcrect: Rectangle, colour: Colour) !void {
     if (!prenderer2D.textured) return Error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.triangles, Renderer2DBatchTag.lines => {

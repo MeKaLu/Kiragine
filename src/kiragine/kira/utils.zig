@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.0.0              |
+// |           Kiragine 1.0.1              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -53,12 +53,12 @@ pub const LogLevel = enum {
 };
 
 /// Error set
-pub const Error = error{KiraCheck};
+pub const Error = error{CheckFailed};
 
 // TODO: Localized cross-platform(win32-posix) timer
 
 /// Initiatizes the timer
-pub fn initTimer() anyerror!void {
+pub fn initTimer() !void {
     timer = try std.time.Timer.start();
 }
 
@@ -72,16 +72,16 @@ pub fn getElapsedTime() u64 {
     return timer.read();
 }
 
-/// If expresion is true return(KiraCheck) error
-pub fn check(expression: bool, comptime msg: []const u8, va: anytype) anyerror!void {
+/// If expresion is true return(CheckFailed) error
+pub fn check(expression: bool, comptime msg: []const u8, va: anytype) !void {
     if (expression) {
         try printEndl(LogLevel.panic, msg, va);
-        return Error.KiraCheck;
+        return Error.CheckFailed;
     }
 }
 
 /// Creates the log file
-pub fn logCreateFile(fileName: []const u8) anyerror!bool {
+pub fn logCreateFile(fileName: []const u8) !bool {
     if (pfile == null) {
         pfile = try std.fs.cwd().createFile(fileName, .{});
         return true;
@@ -90,7 +90,7 @@ pub fn logCreateFile(fileName: []const u8) anyerror!bool {
 }
 
 /// Opens the log file
-pub fn logOpenFile(fileName: []const u8) anyerror!bool {
+pub fn logOpenFile(fileName: []const u8) !bool {
     if (pfile == null) {
         pfile = try std.fs.cwd().openFile(fileName, .{ .write = true, .read = false });
         return true;
@@ -108,7 +108,7 @@ pub fn logCloseFile() bool {
 }
 
 /// Logs the given output and prints it with endl
-pub fn printEndl(level: LogLevel, comptime fmt: []const u8, va: anytype) anyerror!void {
+pub fn printEndl(level: LogLevel, comptime fmt: []const u8, va: anytype) !void {
     const level_name = level_names[@enumToInt(level)];
     const counter = timer.read() / 1000000000;
 
@@ -132,7 +132,7 @@ pub fn printEndl(level: LogLevel, comptime fmt: []const u8, va: anytype) anyerro
 }
 
 /// Logs the given output and prints it without endl
-pub fn printNoEndl(level: LogLevel, comptime fmt: []const u8, va: anytype) anyerror!void {
+pub fn printNoEndl(level: LogLevel, comptime fmt: []const u8, va: anytype) !void {
     const level_name = level_names[@enumToInt(level)];
     const counter = timer.read() / 1000000000;
 

@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.0.0              |
+// |           Kiragine 1.0.1              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -136,7 +136,7 @@ pub const Info = struct {
     }
 
     /// Returns a binded key state
-    pub fn keyState(self: *Info, key: i16) State {
+    pub fn keyState(self: *Info, key: i16) Error!State {
         var i: u8 = 0;
         var l = &self.key_list;
         while (i < max_key_count) : (i += 1) {
@@ -144,7 +144,7 @@ pub const Info = struct {
                 return l[i].status;
             }
         }
-        return State.none;
+        return Error.InvalidBinding;
     }
 
     /// Returns a const reference to a binded key state
@@ -160,7 +160,7 @@ pub const Info = struct {
     }
 
     /// Returns a binded key state
-    pub fn mbuttonState(self: *Info, key: i16) State {
+    pub fn mbuttonState(self: *Info, key: i16) Error!State {
         var i: u8 = 0;
         var l = &self.mbutton_list;
         while (i < max_mbutton_count) : (i += 1) {
@@ -168,7 +168,7 @@ pub const Info = struct {
                 return l[i].status;
             }
         }
-        return State.none;
+        return Error.InvalidBinding;
     }
 
     /// Returns a const reference to a binded key state
@@ -208,7 +208,7 @@ pub const Info = struct {
         }
     }
     /// Handles the keyboard inputs
-    pub fn handleKeyboard(input: *Info, key: i32, ac: i32) anyerror!void {
+    pub fn handleKeyboard(input: *Info, key: i32, ac: i32) !void {
         var l = &input.key_list;
         var i: u8 = 0;
         while (i < Info.max_key_count) : (i += 1) {
@@ -233,7 +233,7 @@ pub const Info = struct {
         }
     }
     /// Handles the mouse button inputs
-    pub fn handleMButton(input: *Info, key: i32, ac: i32) anyerror!void {
+    pub fn handleMButton(input: *Info, key: i32, ac: i32) !void {
         var l = &input.mbutton_list;
         var i: u8 = 0;
         while (i < Info.max_mbutton_count) : (i += 1) {

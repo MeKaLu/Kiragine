@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.0.0              |
+// |           Kiragine 1.0.1              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -159,7 +159,6 @@ pub fn buildExePrimitive(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mod
 }
 
 pub fn buildEngineStatic(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mode, comptime enginepath: []const u8) *Build.LibExeObjStep {
-    // WARN: Building a shared library does not work on windows
     var exe: *Build.LibExeObjStep = undefined;
 
     exe = b.addStaticLibrary("kiragine", enginepath ++ "src/kiragine/kiragine.zig");
@@ -178,6 +177,8 @@ pub fn buildEngineStatic(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mod
 pub fn buildEngine(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mode, comptime enginepath: []const u8) *Build.LibExeObjStep {
     var exe: *Build.LibExeObjStep = undefined;
 
+    // WARN: Building a shared library does not work on windows
+    // There is a problem while linking windows dll's with Builder.addSharedLibrary
     const shared = comptime if (std.Target.current.os.tag == .linux) true else false;
     if (!shared) {
         return buildEngineStatic(b, target, mode, enginepath);

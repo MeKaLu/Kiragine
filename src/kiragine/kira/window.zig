@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.0.0              |
+// |           Kiragine 1.0.1              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -113,7 +113,7 @@ pub const Info = struct {
     };
 
     /// Create the window
-    pub fn create(win: *Info, fullscreen: bool) anyerror!void {
+    pub fn create(win: *Info, fullscreen: bool) !void {
         try utils.check(win.handle != null, "kira/window -> handle must be null", .{});
         win.handle = @ptrCast(?*c_void, c.glfwCreateWindow(win.size.width, win.size.height, @ptrCast([*c]const u8, win.title), if (fullscreen) c.glfwGetPrimaryMonitor() else null, null));
         try utils.check(win.handle == null, "kira/window -> glfw could not create window handle!", .{});
@@ -140,7 +140,7 @@ pub const Info = struct {
         win.update(UpdateProperty.all);
     }
     /// Destroys the window
-    pub fn destroy(win: *Info) anyerror!void {
+    pub fn destroy(win: *Info) !void {
         try utils.check(win.handle == null, "kira/window -> handle must be valid", .{});
         c.glfwDestroyWindow(@ptrCast(?*c.struct_GLFWwindow, win.handle));
         win.handle = null;

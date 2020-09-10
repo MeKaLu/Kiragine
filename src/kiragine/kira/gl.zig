@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.0.0              |
+// |           Kiragine 1.0.1              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -200,7 +200,7 @@ pub fn shaderDelete(sh: u32) void {
 }
 
 /// Compiles the shader source with given shader type
-pub fn shaderCompile(alloc: *std.mem.Allocator, source: []const u8, comptime typ: ShaderType) anyerror!u32 {
+pub fn shaderCompile(alloc: *std.mem.Allocator, source: []const u8, comptime typ: ShaderType) !u32 {
     var result: u32 = shaderCreateBasic(typ);
     c.glShaderSource(result, 1, @ptrCast([*]const [*]const u8, &source), null);
     c.glCompileShader(result);
@@ -228,7 +228,7 @@ pub fn shaderProgramCreateBasic() u32 {
 }
 
 /// Creates a program object from vertex and fragment source
-pub fn shaderProgramCreate(alloc: *std.mem.Allocator, vertex: []const u8, fragment: []const u8) anyerror!u32 {
+pub fn shaderProgramCreate(alloc: *std.mem.Allocator, vertex: []const u8, fragment: []const u8) !u32 {
     const vx = try shaderCompile(alloc, vertex, ShaderType.vertex);
     const fg = try shaderCompile(alloc, fragment, ShaderType.fragment);
     defer {

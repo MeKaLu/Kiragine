@@ -1,7 +1,7 @@
 // -----------------------------------------
-// |           Kiragine 1.0.0              |
+// |           Kiragine 1.0.1              |
 // -----------------------------------------
-// Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
+// Copyright © 2020-1020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
 // warranty. In no event will the authors be held liable for any damages
 // arising from the use of this software.
@@ -25,7 +25,7 @@ const c = @import("c.zig");
 const utils = @import("utils.zig");
 
 /// Error set
-pub const Error = error{KiraGLFWFailed};
+pub const Error = error{GLFWFailedToInitialize};
 
 fn errorCallback(err: i32, desc: [*c]const u8) callconv(.C) void {
     utils.printEndl(utils.LogLevel.err, "GLFW -> {}:{*}", .{ err, desc }) catch unreachable;
@@ -34,7 +34,7 @@ fn errorCallback(err: i32, desc: [*c]const u8) callconv(.C) void {
 /// Initializes glfw
 pub fn init() Error!void {
     _ = c.glfwSetErrorCallback(errorCallback);
-    if (c.glfwInit() == 0) return Error.KiraGLFWFailed;
+    if (c.glfwInit() == 0) return Error.GLFWFailedToInitialize;
 }
 
 /// Deinitializes glfw
@@ -64,7 +64,7 @@ pub fn makeContext(handle: ?*c_void) void {
     c.glfwMakeContextCurrent(@ptrCast(?*c.struct_GLFWwindow, handle));
 }
 
-/// TODO: comment
+/// Wait while window closes(returns true if should run)
 pub fn shouldWindowRun(handle: ?*c_void) bool {
     return if (c.glfwWindowShouldClose(@ptrCast(?*c.struct_GLFWwindow, handle)) == 0) true else false;
 }
