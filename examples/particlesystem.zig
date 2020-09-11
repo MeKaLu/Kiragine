@@ -60,11 +60,6 @@ pub fn main() !void {
     var buf: [8]u8 = undefined;
     try std.crypto.randomBytes(buf[0..]);
     const seed = std.mem.readIntLittle(u64, buf[0..8]);
-    rand = std.rand.DefaultPrng.init(seed);
-
-    var buf: [8]u8 = undefined;
-    try std.crypto.randomBytes(buf[0..]);
-    const seed = std.mem.readIntLittle(u64, buf[0..8]);
     var r = std.rand.DefaultPrng.init(seed);
 
     rand = r.random;
