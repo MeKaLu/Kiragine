@@ -23,7 +23,6 @@
 
 // TODO: Draw circles
 // TODO: Text rendering
-// TODO: Simple particle system
 // TODO: Simple layering system
 // TODO: Custom shaders with custom batch systems
 // (abstract it and make it work with the current draw methods. API breaking change!)
@@ -47,6 +46,8 @@ const vec3 = @import("kira/math/vec3.zig");
 
 const Vertex2DNoTexture = comptime renderer.VertexGeneric(false, Vec2f);
 const Vertex2DTexture = comptime renderer.VertexGeneric(true, Vec2f);
+// Maybe create a white texture and remove this?
+// With that you'll be able to use textured batchs with shape draw calls
 const Batch2DQuadNoTexture = comptime renderer.BatchGeneric(1024 * 8, 6, 4, Vertex2DNoTexture);
 const Batch2DQuadTexture = comptime renderer.BatchGeneric(1024 * 8, 6, 4, Vertex2DTexture);
 
@@ -55,17 +56,14 @@ pub const Vec2f = vec2.Generic(f32);
 pub const Vec3f = vec3.Generic(f32);
 
 pub const Window = window.Info;
-pub const WindowError = window.Error;
-
 pub const Input = input.Info;
-pub const InputError = input.Error;
 
 pub const Camera2D = cam.Camera2D;
 pub const Colour = renderer.ColourGeneric(f32);
 pub const UColour = renderer.ColourGeneric(u8);
 
-/// Error set
-pub const Error = error{
+/// Private Error set
+const pError = error{
     /// Engine is not initialized, initialize it before using the engine
     EngineIsNotInitialized,
     /// Engine is initialized, cannot initialize it again
@@ -76,7 +74,44 @@ pub const Error = error{
     FailedToLoadTexture,
     /// Current batch has filled, cannot able to draw anymore
     FailedToDraw,
+
+    // Merge input errors
+
+    /// Binding is not available
+    InvalidBinding,
+    /// Binding list has filled, cannot able to bind anymore
+    NoEmptyBinding,
+
+    // Merge utils errors
+
+    /// Check has failed(expression was true)
+    CheckFailed,
+
+    // Merge glfw errors
+
+    /// GLFW failed to initialize, check logs!
+    GLFWFailedToInitialize,
+
+    // Merge renderer errors
+
+    /// OpenGL failes to generate vbo, vao, ebo
+    FailedToGenerateBuffers,
+    /// Object list has been reached it's limits
+    /// and you are trying to write into it
+    ObjectOverflow,
+    /// Vertex list has been reached it's limits
+    /// and you are trying to write into it
+    VertexOverflow,
+    /// Index list has been reached it's limits
+    /// and you are trying to write into it
+    IndexOverflow,
+    /// Submit fn is not initialized
+    /// and you are trying to execute it
+    UnknownSubmitFn,
 };
+
+/// Error set
+pub const Error = pError || input.Error || utils.Error || glfw.Error || renderer.Error;
 
 pub const Rectangle = struct {
     x: f32 = 0,
@@ -164,6 +199,95 @@ pub const Texture = struct {
         self.id = 0;
     }
 };
+
+/// Particle type
+pub const Particle = struct {
+    position: Vec2f = Vec2f{},
+    size: Vec2f = Vec2f{},
+    velocity: Vec2f = Vec2f{},
+    colour: Colour = Colour{},
+    lifetime: f32 = 0,
+    is_alive: bool = false,
+};
+
+/// Particle system generic function
+pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
+    return struct {
+        const Self = @This();
+
+        /// Maximum particle count
+        pub const maxparticle = maxparticle_count;
+
+        /// Particle list
+        list: [maxparticle]Particle = undefined,
+
+        /// Draw function for drawing particle
+        drawfn: ?fn (self: Particle) Error!void = null,
+
+        /// Fade modifier,
+        /// Particle gonna fade over lifetime decreases
+        /// With this modifier as a decrease value
+        fade: f32 = 100,
+
+        /// Clear the all particles
+        pub fn clearAll(self: *Self) void {
+            // This is going to set every particle to default values
+            self.list = undefined;
+        }
+
+        /// Draw the particles
+        /// Will return false if failes to draw
+        pub fn draw(self: Self) Error!bool {
+            if (self.drawfn) |fun| {
+                var i: u32 = 0;
+                while (i < Self.maxparticle) : (i += 1) {
+                    if (self.list[i].is_alive) {
+                        try fun(self.list[i]);
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
+        /// Update the particles
+        pub fn update(self: *Self, fixedtime: f32) void {
+            var i: u32 = 0;
+            while (i < Self.maxparticle) : (i += 1) {
+                if (self.list[i].is_alive) {
+                    const vel = Vec2f{
+                        .x = self.list[i].velocity.x * fixedtime,
+                        .y = self.list[i].velocity.y * fixedtime,
+                    };
+                    self.list[i].position = Vec2f.add(self.list[i].position, vel);
+                    if (self.list[i].lifetime > 0) {
+                        self.list[i].lifetime -= 1 * fixedtime;
+                        var alpha: f32 = self.list[i].colour.a * 255.0;
+                        if (alpha <= 10) {
+                            alpha = 0;
+                        } else alpha -= 100 * fixedtime;
+                        self.list[i].colour.a = alpha / 255.0;
+                    } else self.list[i].is_alive = false;
+                }
+            }
+        }
+
+        /// Add particle
+        /// Will return false if failes to add a particle
+        /// Which means the list has been filled
+        pub fn add(self: *Self, particle: Particle) bool {
+            var i: u32 = 0;
+            while (i < Self.maxparticle) : (i += 1) {
+                if (!self.list[i].is_alive) {
+                    self.list[i] = particle;
+                    self.list[i].is_alive = true;
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
+}
 
 /// Helper type
 const Renderer2D = struct {
@@ -723,7 +847,7 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) !void
 }
 
 /// Draws a rectangle
-pub fn drawRectangle(rect: Rectangle, colour: Colour) !void {
+pub fn drawRectangle(rect: Rectangle, colour: Colour) Error!void {
     const pos0 = Vec2f{ .x = rect.x, .y = rect.y };
     const pos1 = Vec2f{ .x = rect.x + rect.width, .y = rect.y };
     const pos2 = Vec2f{ .x = rect.x + rect.width, .y = rect.y + rect.height };
@@ -731,14 +855,14 @@ pub fn drawRectangle(rect: Rectangle, colour: Colour) !void {
 
     pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            try utils.printEndl(utils.LogLevel.warn, "kiragine -> rectangle: failed to draw! Object overflow", .{});
+            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> rectangle: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
 }
 
 /// Draws a rectangle lines
-pub fn drawRectangleLines(rect: Rectangle, colour: Colour) !void {
+pub fn drawRectangleLines(rect: Rectangle, colour: Colour) Error!void {
     try drawRectangle(.{ .x = rect.x, .y = rect.y, .width = rect.width, .height = 1 }, colour);
     try drawRectangle(.{ .x = rect.x + rect.width - 1, .y = rect.y + 1, .width = 1, .height = rect.height - 2 }, colour);
     try drawRectangle(.{ .x = rect.x, .y = rect.y + rect.height - 1, .width = rect.width, .height = 1 }, colour);
@@ -746,7 +870,7 @@ pub fn drawRectangleLines(rect: Rectangle, colour: Colour) !void {
 }
 
 /// Draws a rectangle rotated(rotation should be provided in radians)
-pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) !void {
+pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) Error!void {
     var matrix = ModelMatrix{};
     matrix.translate(rect.x, rect.y, 0);
     matrix.translate(origin.x, origin.y, 0);
@@ -766,13 +890,13 @@ pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colou
 
     pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            try utils.printEndl(utils.LogLevel.warn, "kiragine -> rectangle: failed to draw! Object overflow", .{});
+            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> rectangle: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
 }
 
-fn pdrawRectangle(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, colour: Colour) !void {
+fn pdrawRectangle(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, colour: Colour) Error!void {
     if (prenderer2D.textured) return Error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.lines => {
@@ -789,7 +913,7 @@ fn pdrawRectangle(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, colour: Co
 }
 
 /// Draws a texture
-pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) !void {
+pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) Error!void {
     const pos0 = Vec2f{ .x = rect.x, .y = rect.y };
     const pos1 = Vec2f{ .x = rect.x + rect.width, .y = rect.y };
     const pos2 = Vec2f{ .x = rect.x + rect.width, .y = rect.y + rect.height };
@@ -797,14 +921,14 @@ pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) !void {
 
     pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            try utils.printEndl(utils.LogLevel.warn, "kiragine -> texture: failed to draw! Object overflow", .{});
+            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> texture: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
 }
 
 /// Draws a texture(rotation should be provided in radians)
-pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) !void {
+pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) Error!void {
     var matrix = ModelMatrix{};
     matrix.translate(rect.x, rect.y, 0);
     matrix.translate(origin.x, origin.y, 0);
@@ -824,13 +948,13 @@ pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, ro
 
     pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            try utils.printEndl(utils.LogLevel.warn, "kiragine -> texture: failed to draw! Object overflow", .{});
+            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> texture: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
 }
 
-fn pdrawTexture(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, srcrect: Rectangle, colour: Colour) !void {
+fn pdrawTexture(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, srcrect: Rectangle, colour: Colour) Error!void {
     if (!prenderer2D.textured) return Error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.triangles, Renderer2DBatchTag.lines => {

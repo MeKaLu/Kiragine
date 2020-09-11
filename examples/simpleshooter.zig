@@ -112,7 +112,7 @@ fn update(deltatime: f32) !void {
                 try engine.printEndl(engine.LogLevel.trace, "player: fire({})", .{player.firecount});
 
                 playerbulletfactory.add(bullet) catch |err| {
-                    if (err == engine.LogError.CheckFailed) {
+                    if (err == engine.Error.CheckFailed) {
                         player.firecount += 1;
                     }
                 };
