@@ -236,8 +236,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
         }
 
         /// Draw the particles
-        /// Will return false if failes to draw
-        pub fn draw(self: Self) Error!bool {
+        pub fn draw(self: Self) !void {
             if (self.drawfn) |fun| {
                 var i: u32 = 0;
                 while (i < Self.maxparticle) : (i += 1) {
@@ -245,9 +244,41 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                         try fun(self.list[i]);
                     }
                 }
-                return true;
+            } else {
+                try utils.printEndl(utils.LogLevel.warn, "kiragine -> particle system draw fallbacks to drawing as rectangles", .{});
+                try self.drawAsRectangle();
             }
-            return false;
+        }
+
+        /// Draws the particles as rectangles
+        pub fn drawAsRectangle(self: Self) Error!void {
+            var i: u32 = 0;
+            while (i < Self.maxparticle) : (i += 1) {
+                if (self.list[i].is_alive) {
+                    const rect = Rectangle{
+                        .x = self.list[i].position.x,
+                        .y = self.list[i].position.y,
+                        .width = self.list[i].size.x,
+                        .height = self.list[i].size.y,
+                    };
+                    try drawRectangle(rect, self.list[i].colour);
+                }
+            }
+        }
+        
+        /// Draws the particles as triangles
+        pub fn drawAsTriangle(self: Self) Error!void {
+            var i: u32 = 0;
+            while (i < Self.maxparticle) : (i += 1) {
+                if (self.list[i].is_alive) {
+                    const triangle = [3]Vec2f{
+                        .{ .x = self.list[i].position.x, .y = self.list[i].position.y },
+                        .{ .x = self.list[i].position.x + (self.list[i].size.x / 2), .y = self.list[i].position.y - self.list[i].size.y },
+                        .{ .x = self.list[i].position.x + self.list[i].size.x, .y = self.list[i].position.y },
+                    };
+                    try drawTriangle(triangle[0], triangle[1], triangle[2], self.list[i].colour);
+                }
+            }
         }
 
         /// Update the particles
@@ -263,9 +294,9 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                     if (self.list[i].lifetime > 0) {
                         self.list[i].lifetime -= 1 * fixedtime;
                         var alpha: f32 = self.list[i].colour.a * 255.0;
-                        if (alpha <= 10) {
+                        if (alpha <= 0) {
                             alpha = 0;
-                        } else alpha -= 100 * fixedtime;
+                        } else alpha -= self.fade * fixedtime;
                         self.list[i].colour.a = alpha / 255.0;
                     } else self.list[i].is_alive = false;
                 }
@@ -783,7 +814,7 @@ pub fn flushBatch2D() !void {
 }
 
 /// Draws a pixel
-pub fn drawPixel(pixel: Vec2f, colour: Colour) !void {
+pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void {
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.quads, Renderer2DBatchTag.triangles, Renderer2DBatchTag.lines => {
             return Error.InvalidBatch;
@@ -797,14 +828,14 @@ pub fn drawPixel(pixel: Vec2f, colour: Colour) !void {
         .{ .position = pixel, .colour = colour },
     }) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            try utils.printEndl(utils.LogLevel.warn, "kiragine -> pixel: failed to draw! Object overflow", .{});
+            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> pixel: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
 }
 
 /// Draws a line
-pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) !void {
+pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) Error!void {
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.quads, Renderer2DBatchTag.triangles => {
             return Error.InvalidBatch;
@@ -818,14 +849,14 @@ pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) !void {
         .{ .position = line1, .colour = colour },
     }) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            try utils.printEndl(utils.LogLevel.warn, "kiragine -> line: failed to draw! Object overflow", .{});
+            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> line: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
 }
 
 /// Draws a triangle
-pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) !void {
+pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error!void {
     if (prenderer2D.textured) return Error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.lines => {
@@ -840,7 +871,7 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) !void
         .{ .position = right, .colour = colour },
     }) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            try utils.printEndl(utils.LogLevel.warn, "kiragine -> triangle: failed to draw! Object overflow", .{});
+            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> triangle: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };

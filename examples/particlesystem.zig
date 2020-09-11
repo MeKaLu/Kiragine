@@ -11,7 +11,10 @@ const targetfps = 60;
 
 var rand: std.rand.Xoroshiro128 = undefined;
 
-var particlesys = ParticleSystem{ .drawfn = particledraw };
+var particlesys = ParticleSystem{ 
+    .drawfn = particledraw,
+    .fade = 400,
+};
 
 fn particledraw(self: engine.Particle) engine.Error!void {
     const rect = engine.Rectangle{
@@ -46,9 +49,14 @@ fn draw() !void {
     // Push the triangle batch, it can be mixed with quad batch
     try engine.pushBatch2D(engine.Renderer2DBatchTag.triangles);
 
-    if (!(try particlesys.draw())) {
-        try engine.printEndl(engine.LogLevel.warn, "Particle system has failed to draw", .{});
-    }
+    // Uses the draw call as we set(particleDraw) if it's not set
+    // it'll fallback to draw as rectangles
+    //try particlesys.draw();
+    // draws as rectangles
+    try particlesys.drawAsRectangle();
+    
+    // draws as triangles
+    //try particlesys.drawAsTriangle();
 
     // Pops the current batch
     try engine.popBatch2D();
@@ -60,9 +68,7 @@ pub fn main() !void {
     var buf: [8]u8 = undefined;
     try std.crypto.randomBytes(buf[0..]);
     const seed = std.mem.readIntLittle(u64, buf[0..8]);
-    var r = std.rand.DefaultPrng.init(seed);
-
-    rand = r.random;
+    rand = std.rand.DefaultPrng.init(seed);
 
     try engine.open();
     try engine.update();
