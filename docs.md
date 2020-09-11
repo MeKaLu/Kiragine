@@ -257,6 +257,7 @@ pub fn clearAll(self: *Self) void
 * Draws the particles
 
 --> Fallbacks to drawing as rectangles
+
 --> if `drawfn` not provided
 ```zig
 pub fn draw(self: *Self) !void 
@@ -290,3 +291,101 @@ pub fn update(self: Self, fixedtime: f32) void
 pub fn add(self: *Self, particle: Particle) bool
 ```
 ---
+
+* Initializes the renderer
+
+--> Do **not** call this if you already called the `init` function
+```zig
+pub fn initRenderer(alloc: *std.mem.Allocator, pwin: *const Window) !void 
+```
+
+* Deinitializes the renderer
+
+--> Do **not** call this if you already called the `deinit` function
+```zig
+pub fn deinitRenderer(alloc: *std.mem.Allocator, pwin: *const Window) !void 
+```
+* Clears the screen with given colour
+```zig
+pub fn clearScreen(r: f32, g: f32, b: f32, a: f32) void 
+```
+* Returns the 2D camera
+```zig
+pub fn getCamera2D() *Camera2D 
+```
+* Enables the texture
+```zig
+pub fn enableTextureBatch2D(t: Texture) void 
+```
+* Disables the texture
+```zig
+pub fn disableTextureBatch2D() void 
+```
+* Returns the enabled texture
+```zig
+pub fn gettexturebatch2d() error!texture
+```
+* Pushes the batch
+```zig
+pub fn pushBatch2D(tag: Renderer2DBatchTag) !void 
+```
+* Pops the batch
+```zig
+pub fn popBatch2D() Error!void 
+```
+* Flushes the batch
+```zig
+pub fn flushBatch2D() !void 
+```
+* Draws a pixel
+```zig
+pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void 
+```
+
+* Draws a line
+```zig
+pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) Error!void 
+```
+
+* Draws a triangle
+```zig
+pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error!void 
+```
+
+* Draws a circle
+
+--> The segments are lowered for sake of making it smaller on the batch
+
+```zig
+pub fn drawCircle(position: Vec2f, radius: f32, colour: Colour) Error!void 
+```
+
+* Draws a circle
+```zig
+pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) Error!void 
+```
+
+* Draws a rectangle
+```zig
+pub fn drawRectangle(rect: Rectangle, colour: Colour) Error!void 
+```
+
+* Draws a rectangle lines
+```zig
+pub fn drawRectangleLines(rect: Rectangle, colour: Colour) Error!void 
+```
+
+* Draws a rectangle rotated(rotation should be provided in radians)
+```zig
+pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) Error!void 
+```
+
+* Draws a texture
+```zig
+pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) Error!void 
+```
+
+* Draws a texture(rotation should be provided in radians)
+```zig
+pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) Error!void 
+```
