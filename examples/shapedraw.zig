@@ -47,6 +47,9 @@ fn draw() !void {
     const rot = engine.kira.math.deg2radf(45);
     try engine.drawRectangleRotated(.{ .x = 500, .y = 300, .width = 32, .height = 32 }, origin, rot, engine.Colour.rgba(30, 70, 200, 255));
 
+    // Draws a circle
+    try engine.drawCircle(.{ .x = 700, .y = 500 }, 30, engine.Colour.rgba(200, 200, 200, 255));
+
     // Pops the current batch
     try engine.popBatch2D();
 }

@@ -1,7 +1,7 @@
 const std = @import("std");
 const engine = @import("kiragine");
 
-const maxparticle = 1000;
+const maxparticle = 1500;
 const ParticleSystem = engine.ParticleSystemGeneric(maxparticle);
 
 const windowWidth = 1024;
@@ -35,7 +35,7 @@ fn fixedUpdate(fixedtime: f32) !void {
             .position = .{ .x = 300 + @intToFloat(f32, i * i), .y = windowHeight - 100 },
             .size = .{ .x = 5, .y = 5 },
             .velocity = .{ .x = @intToFloat(f32, rann), .y = -100 },
-            .lifetime = 1.75,
+            .lifetime = 1.5,
             .colour = engine.Colour.rgba(200, 70, 120, 255),
             .fade = 200,
             .fade_colour = engine.Colour.rgba(30, 30, 100, 50),
@@ -54,13 +54,22 @@ fn draw() !void {
     // it'll fallback to draw as rectangles
     //try particlesys.draw();
     // draws as rectangles
-    try particlesys.drawAsRectangles();
+    //try particlesys.drawAsRectangles();
     
     // draws as textures(Don't forget to enable texture batch!)
     // try particlesys.drawAsTextures();
     
     // draws as triangles
     //try particlesys.drawAsTriangles();
+    
+    // draws as circles
+    particlesys.drawAsCircles() catch |err| {
+        if (err == engine.Error.FailedToDraw) {
+            // Uhh, drawing circles takes too much on the batch
+            // Sorry....
+            try engine.printEndl(engine.LogLevel.info, "Drawing circles just overflowed the batch lmao", .{});
+        }
+    };
 
     // Pops the current batch
     try engine.popBatch2D();

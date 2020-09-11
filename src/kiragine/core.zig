@@ -21,14 +21,6 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
-// TODO: 3D camera 
-// TODO: Draw circles
-// TODO: Text rendering
-// TODO: Some kind of ecs
-// TODO: Simple layering system
-// TODO: Custom shaders with custom batch systems
-// (abstract it and make it work with the current draw methods. API breaking change!)
-
 const std = @import("std");
 
 const getElapsedTime = @import("kira/glfw.zig").getElapsedTime;
@@ -161,14 +153,14 @@ pub fn deinit() !void {
     allocator.destroy(pinput);
 }
 
-/// Opens the whole engine
-pub fn open() !void {
+/// Opens the window 
+pub fn open() Error!void {
     if (!pengineready) return Error.EngineIsNotInitialized;
     pwinrun = true;
 }
 
-/// Closes the whole engine
-pub fn close() !void {
+/// Closes the window 
+pub fn close() Error!void {
     if (!pengineready) return Error.EngineIsNotInitialized;
     pwinrun = false;
 }

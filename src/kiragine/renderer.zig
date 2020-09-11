@@ -21,12 +21,21 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
+// TODO: 3D camera 
+// TODO: Draw circles lines
+// TODO: Text rendering
+// TODO: Some kind of ecs
+// TODO: Simple layering system
+// TODO: Custom shaders with custom batch systems
+// (abstract it and make it work with the current draw methods. API breaking change!)
+
 const std = @import("std");
 
 const renderer = @import("kira/renderer.zig");
 const gl = @import("kira/gl.zig");
 const utils = @import("kira/utils.zig");
 const c = @import("kira/c.zig");
+const m = @import("kira/math/common.zig");
 usingnamespace @import("sharedtypes.zig");
 
 const Vertex2DNoTexture = comptime renderer.VertexGeneric(false, Vec2f);
@@ -51,9 +60,9 @@ const Renderer2D = struct {
 pub const Renderer2DBatchTag = enum {
     pixels,
     lines,
-    /// Triangle & rectangle draw can also be used in non-textured quad batch
+    /// Triangle & rectangle & circles draw can also be used in non-textured triangle batch
     triangles,
-    /// Triangle & rectangle draw can also be used in non-textured quad batch
+    /// Triangle & rectangle & circles draw can also be used in non-textured quad batch
     quads,
 };
 
@@ -156,6 +165,17 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                         .{ .x = self.list[i].position.x + self.list[i].size.x, .y = self.list[i].position.y },
                     };
                     try drawTriangle(triangle[0], triangle[1], triangle[2], self.list[i].colour);
+                }
+            }
+        }
+        
+        /// Draws the particles as circles
+        pub fn drawAsCircles(self: Self) Error!void {
+            var i: u32 = 0;
+            while (i < Self.maxparticle) : (i += 1) {
+                if (self.list[i].is_alive) {
+                    const rad: f32 = (self.list[i].size.x / self.list[i].size.y) * 10;
+                    try drawCircle(self.list[i].position, rad, self.list[i].colour);
                 }
             }
         }
@@ -418,6 +438,8 @@ pub fn popBatch2D() !void {
                 return Error.InvalidBatch;
             } else {
                 try prenderer2D.quadbatch_notexture.draw(gl.DrawMode.points);
+                prenderer2D.quadbatch_notexture.vertex_list = undefined;
+                prenderer2D.quadbatch_notexture.index_list = undefined;
             }
         },
         Renderer2DBatchTag.lines => {
@@ -425,6 +447,8 @@ pub fn popBatch2D() !void {
                 return Error.InvalidBatch;
             } else {
                 try prenderer2D.quadbatch_notexture.draw(gl.DrawMode.lines);
+                prenderer2D.quadbatch_notexture.vertex_list = undefined;
+                prenderer2D.quadbatch_notexture.index_list = undefined;
             }
         },
         Renderer2DBatchTag.triangles => {
@@ -461,6 +485,7 @@ pub fn flushBatch2D() !void {
 
 /// Draws a pixel
 pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void {
+    if (prenderer2D.textured) return Error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.quads, Renderer2DBatchTag.triangles, Renderer2DBatchTag.lines => {
             return Error.InvalidBatch;
@@ -482,6 +507,7 @@ pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void {
 
 /// Draws a line
 pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) Error!void {
+    if (prenderer2D.textured) return Error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.quads, Renderer2DBatchTag.triangles => {
             return Error.InvalidBatch;
@@ -521,6 +547,87 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error
             return Error.FailedToDraw;
         } else return err;
     };
+}
+
+/// Draws a circle
+/// The segments are lowered for sake of 
+/// making it smaller on the batch
+pub fn drawCircle(position: Vec2f, radius: f32, colour: Colour) Error!void {
+    try drawCircleAdvanced(position, radius, 0, 360, 16, colour);
+}
+
+// Source: https://github.com/raysan5/raylib/blob/f1ed8be5d7e2d966d577a3fd28e53447a398b3b6/src/shapes.c#L209
+/// Draws a circle
+pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) Error!void {
+    const SMOOTH_CIRCLE_ERROR_RATE = comptime 0.5;
+    
+    var iradius = radius;
+    var istartangle = startangle;
+    var iendangle = endangle;
+    var isegments = segments;
+
+    if (iradius <= 0.0) iradius = 0.1;  // Avoid div by zero
+    // Function expects (endangle > startangle)
+    if (iendangle < istartangle) {
+        // Swap values
+        const tmp = istartangle;
+        istartangle = iendangle;
+        iendangle = tmp;
+    }
+    
+    if (isegments < 4) {
+        // Calculate the maximum angle between segments based on the error rate (usually 0.5f)
+        const th: f32 = std.math.acos(2 * std.math.pow(f32, 1 - SMOOTH_CIRCLE_ERROR_RATE / iradius, 2) - 1);
+        isegments = @floatToInt(i32, (@intToFloat(f32, (iendangle - istartangle)) * std.math.ceil(2 * m.PI / th) / 360));
+
+        if (isegments <= 0) isegments = 4;
+    }
+    const steplen: f32 = @intToFloat(f32, iendangle - istartangle) / @intToFloat(f32, isegments);
+    var angle: f32 = @intToFloat(f32, istartangle);
+
+    // NOTE: Every QUAD actually represents two segments
+    var i: i32 = 0;
+    while (i < @divTrunc(isegments, 2)) : (i += 1) {
+        const pos0 = Vec2f{ .x = center.x, .y = center.y };
+        const pos1 = Vec2f{ 
+            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius, 
+            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius
+        };
+        const pos2 = Vec2f{ 
+            .x = center.x + std.math.sin(m.deg2radf(angle + steplen)) * iradius, 
+            .y = center.y + std.math.cos(m.deg2radf(angle + steplen)) * iradius
+        };
+        const pos3 = Vec2f{ 
+            .x = center.x + std.math.sin(m.deg2radf(angle + steplen * 2)) * iradius, 
+            .y = center.y + std.math.cos(m.deg2radf(angle + steplen * 2)) * iradius
+        };
+
+        angle += steplen * 2;
+        pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
+            if (err == renderer.Error.ObjectOverflow) {
+                return Error.FailedToDraw;
+            } else return err;
+        };
+    }
+    // NOTE: In case number of segments is odd, we add one last piece to the cake
+    if (@mod(isegments, 2) != 0) {
+        const pos0 = Vec2f{ .x = center.x, .y = center.y };
+        const pos1 = Vec2f{ 
+            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius, 
+            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius
+        };
+        const pos2 = Vec2f{ 
+            .x = center.x + std.math.sin(m.deg2radf(angle + steplen)) * iradius, 
+            .y = center.y + std.math.cos(m.deg2radf(angle + steplen)) * iradius
+        };
+        const pos3 = Vec2f{ .x = center.x, .y = center.y };
+        
+        pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
+            if (err == renderer.Error.ObjectOverflow) {
+                return Error.FailedToDraw;
+            } else return err;
+        };
+    }
 }
 
 /// Draws a rectangle
