@@ -9,7 +9,7 @@ const windowHeight = 768;
 const title = "Particle system";
 const targetfps = 60;
 
-var rand: std.rand.Xoroshiro128 = undefined; 
+var rand: std.rand.Xoroshiro128 = undefined;
 
 var particlesys = ParticleSystem{ .drawfn = particledraw };
 
@@ -25,13 +25,13 @@ fn particledraw(self: engine.Particle) engine.Error!void {
 
 fn fixedUpdate(fixedtime: f32) !void {
     particlesys.update(fixedtime);
-    
+
     var i: u32 = 0;
     while (i < 10) : (i += 1) {
         const rann = rand.random.intRangeLessThan(i32, -100, 100);
         const p = engine.Particle{
             .position = .{ .x = 300 + @intToFloat(f32, i * i), .y = windowHeight - 100 },
-            .size = .{ .x = 5, .y = 5 }, 
+            .size = .{ .x = 5, .y = 5 },
             .velocity = .{ .x = @intToFloat(f32, rann), .y = -100 },
             .lifetime = 1.75,
             .colour = engine.Colour.rgba(70, 200, 30, 255),
@@ -56,14 +56,11 @@ fn draw() !void {
 
 pub fn main() !void {
     try engine.init(null, fixedUpdate, draw, windowWidth, windowHeight, title, targetfps, std.heap.page_allocator);
-<<<<<<< HEAD
-    
+
     var buf: [8]u8 = undefined;
     try std.crypto.randomBytes(buf[0..]);
     const seed = std.mem.readIntLittle(u64, buf[0..8]);
     rand = std.rand.DefaultPrng.init(seed);
-        
-=======
 
     var buf: [8]u8 = undefined;
     try std.crypto.randomBytes(buf[0..]);
@@ -72,7 +69,6 @@ pub fn main() !void {
 
     rand = r.random;
 
->>>>>>> 90818eeed9a86fa608e60ae50c8c70a575351cbb
     try engine.open();
     try engine.update();
 
