@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.0.1              |
+// |           Kiragine 1.0.2              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -47,13 +47,15 @@ const Batch2DQuadTexture = comptime renderer.BatchGeneric(1024 * 8, 6, 4, Vertex
 
 /// Helper type
 const Renderer2D = struct {
+    tag: Renderer2DBatchTag = Renderer2DBatchTag.quads,
     cam: Camera2D = Camera2D{},
+    
     quadbatch_notexture: Batch2DQuadNoTexture = Batch2DQuadNoTexture{},
     quadbatch_texture: Batch2DQuadTexture = Batch2DQuadTexture{},
+    current_texture: Texture = Texture{},
+    
     notextureshader: u32 = 0,
     textureshader: u32 = 0,
-    current_texture: Texture = Texture{},
-    tag: Renderer2DBatchTag = Renderer2DBatchTag.quads,
     textured: bool = false,
 };
 
@@ -340,7 +342,7 @@ pub fn initRenderer(alloc: *std.mem.Allocator, pwin: *const Window) !void {
 
 /// Deinitializes the renderer
 /// WARN: Do NOT call this if you already called the deinit function
-pub fn deinitRenderer() !void {
+pub fn deinitRenderer() void {
     prenderer2D.quadbatch_notexture.destroy();
     prenderer2D.quadbatch_texture.destroy();
 
@@ -427,10 +429,19 @@ pub fn pushBatch2D(tag: Renderer2DBatchTag) !void {
 }
 
 /// Pops the batch
-pub fn popBatch2D() !void {
-    defer prenderer2D.cam.detach();
-    defer prenderer2D.quadbatch_texture.submission_counter = 0;
-    defer prenderer2D.quadbatch_notexture.submission_counter = 0;
+pub fn popBatch2D() Error!void {
+    defer {
+        prenderer2D.cam.detach();
+        if (prenderer2D.textured) {
+            prenderer2D.quadbatch_texture.submission_counter = 0;
+            prenderer2D.quadbatch_texture.vertex_list = undefined;
+            prenderer2D.quadbatch_texture.index_list = undefined;
+        } else {
+            prenderer2D.quadbatch_notexture.submission_counter = 0;
+            prenderer2D.quadbatch_notexture.vertex_list = undefined;
+            prenderer2D.quadbatch_notexture.index_list = undefined;
+        }
+    }
 
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.pixels => {
@@ -438,8 +449,6 @@ pub fn popBatch2D() !void {
                 return Error.InvalidBatch;
             } else {
                 try prenderer2D.quadbatch_notexture.draw(gl.DrawMode.points);
-                prenderer2D.quadbatch_notexture.vertex_list = undefined;
-                prenderer2D.quadbatch_notexture.index_list = undefined;
             }
         },
         Renderer2DBatchTag.lines => {
@@ -447,8 +456,6 @@ pub fn popBatch2D() !void {
                 return Error.InvalidBatch;
             } else {
                 try prenderer2D.quadbatch_notexture.draw(gl.DrawMode.lines);
-                prenderer2D.quadbatch_notexture.vertex_list = undefined;
-                prenderer2D.quadbatch_notexture.index_list = undefined;
             }
         },
         Renderer2DBatchTag.triangles => {
@@ -456,8 +463,6 @@ pub fn popBatch2D() !void {
                 return Error.InvalidBatch;
             } else {
                 try prenderer2D.quadbatch_notexture.draw(gl.DrawMode.triangles);
-                prenderer2D.quadbatch_notexture.vertex_list = undefined;
-                prenderer2D.quadbatch_notexture.index_list = undefined;
             }
         },
         Renderer2DBatchTag.quads => {
@@ -465,12 +470,8 @@ pub fn popBatch2D() !void {
                 gl.textureBind(gl.TextureType.t2D, prenderer2D.current_texture.id);
                 try prenderer2D.quadbatch_texture.draw(gl.DrawMode.triangles);
                 gl.textureBind(gl.TextureType.t2D, 0);
-                prenderer2D.quadbatch_texture.vertex_list = undefined;
-                prenderer2D.quadbatch_texture.index_list = undefined;
             } else {
                 try prenderer2D.quadbatch_notexture.draw(gl.DrawMode.triangles);
-                prenderer2D.quadbatch_notexture.vertex_list = undefined;
-                prenderer2D.quadbatch_notexture.index_list = undefined;
             }
         },
     }
@@ -499,7 +500,6 @@ pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void {
         .{ .position = pixel, .colour = colour },
     }) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> pixel: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
@@ -521,7 +521,6 @@ pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) Error!void {
         .{ .position = line1, .colour = colour },
     }) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> line: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
@@ -543,7 +542,6 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error
         .{ .position = right, .colour = colour },
     }) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> triangle: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
@@ -639,7 +637,6 @@ pub fn drawRectangle(rect: Rectangle, colour: Colour) Error!void {
 
     pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> rectangle: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
@@ -674,7 +671,6 @@ pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colou
 
     pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> rectangle: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
@@ -689,7 +685,6 @@ pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) Error!vo
 
     pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> texture: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };
@@ -716,7 +711,6 @@ pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, ro
 
     pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            //try utils.printEndl(utils.LogLevel.warn, "kiragine -> texture: failed to draw! Object overflow", .{});
             return Error.FailedToDraw;
         } else return err;
     };

@@ -10,7 +10,7 @@ var texture: engine.Texture = undefined;
 var textureGenerated: engine.Texture = undefined;
 
 const rect: engine.Rectangle = .{ .x = 500, .y = 380, .width = 32 * 3, .height = 32 * 3 };
-const rect2: engine.Rectangle = .{ .x = 300, .y = 400, .width = 32, .height = 32 };
+const rect2: engine.Rectangle = .{ .x = 300, .y = 400, .width = 32 * 6, .height = 32 * 6 };
 const srcrect: engine.Rectangle = .{ .x = 0, .y = 0, .width = 32, .height = 32 };
 
 fn draw() !void {
@@ -22,10 +22,10 @@ fn draw() !void {
     try engine.pushBatch2D(engine.Renderer2DBatchTag.quads);
 
     // Draw texture rotated
-    try engine.drawTextureRotated(rect2, srcrect, .{ .x = 16, .y = 16 }, engine.kira.math.deg2radf(45), engine.Colour.rgba(255, 255, 255, 255));
+    try engine.drawTextureRotated(rect2, srcrect, .{ .x = 16, .y = 16 }, engine.kira.math.deg2radf(45), engine.Colour.rgba(255, 0, 0, 255));
 
     // Draw texture
-    try engine.drawTexture(rect, srcrect, engine.Colour.rgba(20, 20, 20, 150));
+    try engine.drawTexture(rect, srcrect, engine.Colour.rgba(255, 255, 255, 255));
 
     // Pops the current batch
     try engine.popBatch2D();

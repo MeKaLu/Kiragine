@@ -73,11 +73,11 @@ pub const Texture = struct {
 ```
 * Creates a texture from png file
 ```zig
-pub fn createFromPNG(path: []const  u8) !Texture
+pub fn createFromPNG(path: []const  u8) Error!Texture
 ```
 * Creates a texture from png memory
 ```zig
-pub fn createFromPNGMemory(mem: []const  u8) !Texture
+pub fn createFromPNGMemory(mem: []const  u8) Error!Texture
 ```
 * Creates a texture from given colour
 ```zig

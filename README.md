@@ -9,5 +9,6 @@
 <li>Every x.x.3 creates a new minor, which becomes x.(x + 1).0</li>
 <li>Again every x.3.x creates a new major, which becomes (x + 1).0.x</li>
 <li>When a minor gets created, there will be a new release</li>
+<li>When a new version comes, it'll comitted as x.x.x source update</li>
 </ul>
 

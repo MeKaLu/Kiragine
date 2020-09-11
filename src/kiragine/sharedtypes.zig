@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.0.1              |
+// |           Kiragine 1.0.2              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -147,7 +147,7 @@ pub const Texture = struct {
     }
 
     /// Creates a texture from png file
-    pub fn createFromPNG(path: []const u8) !Texture {
+    pub fn createFromPNG(path: []const u8) Error!Texture {
         var result = Texture{};
         result.loadSetup();
         defer gl.textureBind(gl.TextureType.t2D, 0);
@@ -166,7 +166,7 @@ pub const Texture = struct {
     }
 
     /// Creates a texture from png memory
-    pub fn createFromPNGMemory(mem: []const u8) !Texture {
+    pub fn createFromPNGMemory(mem: []const u8) Error!Texture {
         var result = Texture{};
         result.loadSetup();
         defer gl.textureBind(gl.TextureType.t2D, 0);
