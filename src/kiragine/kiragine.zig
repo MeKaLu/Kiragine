@@ -21,7 +21,9 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
+pub usingnamespace @import("sharedtypes.zig");
 pub usingnamespace @import("core.zig");
+pub usingnamespace @import("renderer.zig");
 
 pub const kira = @import("kira/kira.zig");
 
