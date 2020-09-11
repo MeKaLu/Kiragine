@@ -1,7 +1,9 @@
-<h1 id="examples">Examples</h1>
-<p>More on <a href="https://github.com/Kiakra/Kiragine/tree/master/examples">examples</a></p>
-<h2 id="basic-engine-initialization">Basic engine initialization</h2>
-<pre class=" language-zig"><code class="prism  language-zig">const std = @import("std");
+# Examples
+More on [examples](https://github.com/Kiakra/Kiragine/tree/master/examples)
+
+## Basic engine initialization
+```zig
+const std = @import("std");
 const engine = @import("kiragine");
 
 const windowWidth = 1024;
@@ -18,10 +20,11 @@ pub fn main() anyerror!void {
 
   try engine.deinit();
 }
-</code></pre>
-<hr>
-<h2 id="basic-engine-initialization-with-game-loops">Basic engine initialization with game loops</h2>
-<pre class=" language-zig"><code class="prism  language-zig">const std = @import("std");
+```
+-------------------------
+## Basic engine initialization with game loops
+```zig
+const std = @import("std");
 const engine = @import("kiragine");
 
 const windowWidth = 1024;
@@ -51,5 +54,4 @@ pub fn main() anyerror!void {
 
   try engine.deinit();
 }
-</code></pre>
-
+```
