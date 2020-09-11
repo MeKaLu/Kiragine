@@ -1,7 +1,8 @@
 <h1 id="kiragine">Kiragine</h1>
 <p>Game engine written in zig, compatible with <strong>master branch</strong><br>
 <strong>No external dependencies</strong> required!</p>
-<p>Want to know how to <strong>use this engine</strong>? <a href="https://github.com/Kiakra/Kiragine/blob/master/example-code.md">Click here!</a></p>
+<p>Want to know how to <strong>get started</strong>? <a href="https://github.com/Kiakra/Kiragine/blob/master/example-code.md">Click here!</a></p>
+<p><a href="https://github.com/Kiakra/Kiragine/blob/master/docs.md">API documentation</a></p>
 <h2 id="about-release-cycle">About release cycle</h2>
 <ul>
 <li>Versioning: major.minor.patch</li>
