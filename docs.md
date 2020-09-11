@@ -303,7 +303,7 @@ pub fn initRenderer(alloc: *std.mem.Allocator, pwin: *const Window) !void
 
 --> Do **not** call this if you already called the `deinit` function
 ```zig
-pub fn deinitRenderer(alloc: *std.mem.Allocator, pwin: *const Window) !void 
+pub fn deinitRenderer() !void 
 ```
 * Clears the screen with given colour
 ```zig
