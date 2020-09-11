@@ -21,8 +21,10 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
+// TODO: 3D camera 
 // TODO: Draw circles
 // TODO: Text rendering
+// TODO: Some kind of ecs
 // TODO: Simple layering system
 // TODO: Custom shaders with custom batch systems
 // (abstract it and make it work with the current draw methods. API breaking change!)
@@ -74,6 +76,8 @@ const pError = error{
     FailedToLoadTexture,
     /// Current batch has filled, cannot able to draw anymore
     FailedToDraw,
+    /// Texture is not available or corrupted
+    InvalidTexture,
 
     // Merge input errors
 
@@ -200,13 +204,58 @@ pub const Texture = struct {
     }
 };
 
+/// Helper type for using MVP's
+pub const ModelMatrix = struct {
+    model: Mat4x4f = Mat4x4f.identity(),
+    trans: Mat4x4f = Mat4x4f.identity(),
+    rot: Mat4x4f = Mat4x4f.identity(),
+    sc: Mat4x4f = Mat4x4f.identity(),
+
+    /// Apply the changes were made
+    pub fn update(self: *ModelMatrix) void {
+        self.model = Mat4x4f.mul(self.sc, Mat4x4f.mul(self.trans, self.rot));
+    }
+
+    /// Translate the matrix 
+    pub fn translate(self: *ModelMatrix, x: f32, y: f32, z: f32) void {
+        self.trans = Mat4x4f.translate(x, y, z);
+        self.update();
+    }
+
+    /// Rotate the matrix 
+    pub fn rotate(self: *ModelMatrix, x: f32, y: f32, z: f32, angle: f32) void {
+        self.rot = Mat4x4f.rotate(x, y, z, angle);
+        self.update();
+    }
+
+    /// Scale the matrix 
+    pub fn scale(self: *ModelMatrix, x: f32, y: f32, z: f32) void {
+        self.sc = Mat4x4f.scale(x, y, z);
+        self.update();
+    }
+};
+
 /// Particle type
 pub const Particle = struct {
     position: Vec2f = Vec2f{},
     size: Vec2f = Vec2f{},
     velocity: Vec2f = Vec2f{},
     colour: Colour = Colour{},
+
+    /// Lifetime modifier,
+    /// Particle gonna die after this hits 0 
     lifetime: f32 = 0,
+
+    /// Fade modifier,
+    /// Particle gonna fade over lifetime decreases
+    /// With this modifier as a decrease value
+    fade: f32 = 100,
+
+    /// Fade colour modifier
+    /// Particles colour is gonna change over fade modifer,
+    // until hits this modifier value
+    fade_colour: Colour = colour, 
+ 
     is_alive: bool = false,
 };
 
@@ -223,11 +272,6 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
 
         /// Draw function for drawing particle
         drawfn: ?fn (self: Particle) Error!void = null,
-
-        /// Fade modifier,
-        /// Particle gonna fade over lifetime decreases
-        /// With this modifier as a decrease value
-        fade: f32 = 100,
 
         /// Clear the all particles
         pub fn clearAll(self: *Self) void {
@@ -251,7 +295,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
         }
 
         /// Draws the particles as rectangles
-        pub fn drawAsRectangle(self: Self) Error!void {
+        pub fn drawAsRectangles(self: Self) Error!void {
             var i: u32 = 0;
             while (i < Self.maxparticle) : (i += 1) {
                 if (self.list[i].is_alive) {
@@ -267,7 +311,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
         }
         
         /// Draws the particles as triangles
-        pub fn drawAsTriangle(self: Self) Error!void {
+        pub fn drawAsTriangles(self: Self) Error!void {
             var i: u32 = 0;
             while (i < Self.maxparticle) : (i += 1) {
                 if (self.list[i].is_alive) {
@@ -277,6 +321,30 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                         .{ .x = self.list[i].position.x + self.list[i].size.x, .y = self.list[i].position.y },
                     };
                     try drawTriangle(triangle[0], triangle[1], triangle[2], self.list[i].colour);
+                }
+            }
+        }
+        
+        /// Draws the particles as textures
+        /// Don't forget the enable texture batch!
+        pub fn drawAsTextures(self: Self) Error!void {
+            var i: u32 = 0;
+            while (i < Self.maxparticle) : (i += 1) {
+                if (self.list[i].is_alive) {
+                    const t = try getTextureBatch2D();
+                    const rect = Rectangle{
+                        .x = self.list[i].position.x,
+                        .y = self.list[i].position.y,
+                        .width = self.list[i].size.x,
+                        .height = self.list[i].size.y,
+                    };
+                    const srcrect = Rectangle{
+                        .x = 0, 
+                        .y = 0, 
+                        .width = t.width, 
+                        .height = t.height, 
+                    };
+                    try drawTexture(rect, srcrect, self.list[i].colour);
                 }
             }
         }
@@ -293,11 +361,31 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                     self.list[i].position = Vec2f.add(self.list[i].position, vel);
                     if (self.list[i].lifetime > 0) {
                         self.list[i].lifetime -= 1 * fixedtime;
-                        var alpha: f32 = self.list[i].colour.a * 255.0;
-                        if (alpha <= 0) {
-                            alpha = 0;
-                        } else alpha -= self.fade * fixedtime;
-                        self.list[i].colour.a = alpha / 255.0;
+                        var alpha: f32 = self.list[i].colour.a;
+                        var r: f32 = self.list[i].colour.r;
+                        var g: f32 = self.list[i].colour.g;
+                        var b: f32 = self.list[i].colour.b;
+
+                        if (r < self.list[i].fade_colour.r) {
+                            r = self.list[i].fade_colour.r;
+                        } else r = ((r * 255.0) - (self.list[i].fade * fixedtime)) / 255.0;
+                        
+                        if (g < self.list[i].fade_colour.g) {
+                            g = self.list[i].fade_colour.g;
+                        } else g = ((g * 255.0) - (self.list[i].fade * fixedtime)) / 255.0;
+                        
+                        if (b < self.list[i].fade_colour.b) {
+                            b = self.list[i].fade_colour.b;
+                        } else b = ((b * 255.0) - (self.list[i].fade * fixedtime)) / 255.0;
+                        
+                        if (alpha < self.list[i].fade_colour.a) {
+                            alpha = self.list[i].fade_colour.a;
+                        } else alpha = ((alpha * 255.0) - (self.list[i].fade * fixedtime)) / 255.0;
+
+                        self.list[i].colour.a = alpha;
+                        self.list[i].colour.r = r;
+                        self.list[i].colour.g = g;
+                        self.list[i].colour.b = b; 
                     } else self.list[i].is_alive = false;
                 }
             }
@@ -330,33 +418,6 @@ const Renderer2D = struct {
     current_texture: Texture = Texture{},
     tag: Renderer2DBatchTag = Renderer2DBatchTag.quads,
     textured: bool = false,
-};
-
-/// Helper type
-const ModelMatrix = struct {
-    model: Mat4x4f = Mat4x4f.identity(),
-    trans: Mat4x4f = Mat4x4f.identity(),
-    rot: Mat4x4f = Mat4x4f.identity(),
-    sc: Mat4x4f = Mat4x4f.identity(),
-
-    pub fn update(self: *ModelMatrix) void {
-        self.model = Mat4x4f.mul(self.sc, Mat4x4f.mul(self.trans, self.rot));
-    }
-
-    pub fn translate(self: *ModelMatrix, x: f32, y: f32, z: f32) void {
-        self.trans = Mat4x4f.translate(x, y, z);
-        self.update();
-    }
-
-    pub fn rotate(self: *ModelMatrix, x: f32, y: f32, z: f32, angle: f32) void {
-        self.rot = Mat4x4f.rotate(x, y, z, angle);
-        self.update();
-    }
-
-    pub fn scale(self: *ModelMatrix, x: f32, y: f32, z: f32) void {
-        self.sc = Mat4x4f.scale(x, y, z);
-        self.update();
-    }
 };
 
 const pnotexture_vertex_shader =
@@ -694,12 +755,12 @@ pub fn getInput() *Input {
 }
 
 /// Returns the mouse pos x
-pub fn getMouseX() *f32 {
+pub fn getMouseX() f32 {
     return pmouseX;
 }
 
 /// Returns the mouse pos y
-pub fn getMouseY() *f32 {
+pub fn getMouseY() f32 {
     return pmouseY;
 }
 
@@ -713,6 +774,14 @@ pub fn enableTextureBatch2D(t: Texture) void {
 pub fn disableTextureBatch2D() void {
     prenderer2D.current_texture.id = 0;
     prenderer2D.textured = false;
+}
+
+/// Returns the enabled texture
+pub fn getTextureBatch2D() Error!Texture {
+    if (prenderer2D.textured) {
+        return prenderer2D.current_texture;
+    }
+    return Error.InvalidTexture;
 }
 
 /// Pushes the batch

@@ -13,7 +13,6 @@ var rand: std.rand.Xoroshiro128 = undefined;
 
 var particlesys = ParticleSystem{ 
     .drawfn = particledraw,
-    .fade = 400,
 };
 
 fn particledraw(self: engine.Particle) engine.Error!void {
@@ -37,7 +36,9 @@ fn fixedUpdate(fixedtime: f32) !void {
             .size = .{ .x = 5, .y = 5 },
             .velocity = .{ .x = @intToFloat(f32, rann), .y = -100 },
             .lifetime = 1.75,
-            .colour = engine.Colour.rgba(70, 200, 30, 255),
+            .colour = engine.Colour.rgba(200, 70, 120, 255),
+            .fade = 200,
+            .fade_colour = engine.Colour.rgba(30, 30, 100, 50),
         };
         _ = particlesys.add(p);
     }
@@ -53,10 +54,13 @@ fn draw() !void {
     // it'll fallback to draw as rectangles
     //try particlesys.draw();
     // draws as rectangles
-    try particlesys.drawAsRectangle();
+    try particlesys.drawAsRectangles();
+    
+    // draws as textures(Don't forget to enable texture batch!)
+    // try particlesys.drawAsTextures();
     
     // draws as triangles
-    //try particlesys.drawAsTriangle();
+    //try particlesys.drawAsTriangles();
 
     // Pops the current batch
     try engine.popBatch2D();
