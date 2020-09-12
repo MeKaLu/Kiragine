@@ -121,7 +121,11 @@ pub fn BatchGeneric(max_object: u32, max_index: u32, max_vertex: u32, comptime v
             gl.vertexArraysGen(1, @ptrCast([*]u32, &self.vertex_array));
             gl.buffersGen(2, &self.buffers);
 
-            if (self.vertex_array == 0 or self.buffers[0] == 0 or self.buffers[1] == 0) return Error.FailedToGenerateBuffers;
+            if (self.vertex_array == 0 or self.buffers[0] == 0 or self.buffers[1] == 0) {
+                gl.vertexArraysDelete(1, @ptrCast([*]const u32, &self.vertex_array));
+                gl.buffersDelete(2, @ptrCast([*]const u32, &self.buffers));
+                return Error.FailedToGenerateBuffers;
+            }
 
             gl.vertexArrayBind(self.vertex_array);
             defer gl.vertexArrayBind(0);

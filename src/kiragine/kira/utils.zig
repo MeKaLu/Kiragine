@@ -53,12 +53,15 @@ pub const LogLevel = enum {
 };
 
 /// Error set
-pub const Error = error{CheckFailed};
+const pError = error{CheckFailed};
+
+/// Error set
+pub const Error = pError || std.time.Timer.Error || std.os.WriteError || std.fmt.BufPrintError || std.fs.File.OpenError;
 
 // TODO: Localized cross-platform(win32-posix) timer
 
 /// Initiatizes the timer
-pub fn initTimer() !void {
+pub fn initTimer() Error!void {
     timer = try std.time.Timer.start();
 }
 
@@ -73,7 +76,7 @@ pub fn getElapsedTime() u64 {
 }
 
 /// If expresion is true return(CheckFailed) error
-pub fn check(expression: bool, comptime msg: []const u8, va: anytype) !void {
+pub fn check(expression: bool, comptime msg: []const u8, va: anytype) Error!void {
     if (expression) {
         try printEndl(LogLevel.panic, msg, va);
         return Error.CheckFailed;
@@ -81,7 +84,7 @@ pub fn check(expression: bool, comptime msg: []const u8, va: anytype) !void {
 }
 
 /// Creates the log file
-pub fn logCreateFile(fileName: []const u8) !bool {
+pub fn logCreateFile(fileName: []const u8) Error!bool {
     if (pfile == null) {
         pfile = try std.fs.cwd().createFile(fileName, .{});
         return true;
@@ -90,7 +93,7 @@ pub fn logCreateFile(fileName: []const u8) !bool {
 }
 
 /// Opens the log file
-pub fn logOpenFile(fileName: []const u8) !bool {
+pub fn logOpenFile(fileName: []const u8) Error!bool {
     if (pfile == null) {
         pfile = try std.fs.cwd().openFile(fileName, .{ .write = true, .read = false });
         return true;
@@ -108,7 +111,7 @@ pub fn logCloseFile() bool {
 }
 
 /// Logs the given output and prints it with endl
-pub fn printEndl(level: LogLevel, comptime fmt: []const u8, va: anytype) !void {
+pub fn printEndl(level: LogLevel, comptime fmt: []const u8, va: anytype) Error!void {
     const level_name = level_names[@enumToInt(level)];
     const counter = timer.read() / 1000000000;
 
@@ -132,7 +135,7 @@ pub fn printEndl(level: LogLevel, comptime fmt: []const u8, va: anytype) !void {
 }
 
 /// Logs the given output and prints it without endl
-pub fn printNoEndl(level: LogLevel, comptime fmt: []const u8, va: anytype) !void {
+pub fn printNoEndl(level: LogLevel, comptime fmt: []const u8, va: anytype) Error!void {
     const level_name = level_names[@enumToInt(level)];
     const counter = timer.read() / 1000000000;
 

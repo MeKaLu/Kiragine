@@ -24,6 +24,9 @@ fn draw() !void {
     try engine.pushBatch2D(engine.Renderer2DBatchTag.lines);
     // Draw line
     try engine.drawLine(.{ .x = 400, .y = 400 }, .{ .x = 400, .y = 500 }, engine.Colour.rgba(255, 255, 255, 255));
+    
+    // Draws a circle lines
+    try engine.drawCircleLines(.{ .x = 700, .y = 200 }, 30, engine.Colour.rgba(200, 200, 200, 255));
     // Pops the current batch
     try engine.popBatch2D();
 

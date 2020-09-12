@@ -275,6 +275,26 @@ pub fn shaderProgramGetUniformLocation(sh: u32, name: []const u8) i32 {
     return c.glGetUniformLocation(sh, @ptrCast([*c]const u8, name));
 }
 
+/// Sets the int data
+pub fn shaderProgramSetInt(loc: i32, value: i32) void {
+    c.glUniform1i(loc, value);
+}
+
+/// Sets the float data
+pub fn shaderProgramSetFloat(loc: i32, value: f32) void {
+    c.glUniform1f(loc, value);
+}
+
+/// Sets the vec2 data
+pub fn shaderProgramSetVec2f(loc: i32, value: [*]const f32) void {
+    c.glUniform2fv(loc, 1, value);
+}
+
+/// Sets the vec3 data
+pub fn shaderProgramSetVec3f(loc: i32, value: [*]const f32) void {
+    c.glUniform3fv(loc, 1, value);
+}
+
 /// Sets the matrix data
 pub fn shaderProgramSetMat4x4f(loc: i32, data: [*]const f32) void {
     c.glUniformMatrix4fv(loc, 1, c.GL_FALSE, data);

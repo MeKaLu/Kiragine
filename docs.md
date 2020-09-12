@@ -136,7 +136,7 @@ pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fi
 
 * Deinitializes the engine
 ```zig
-pub fn deinit() !void
+pub fn deinit() Error!void
 ```
 * Opens the window
 ```zig 
@@ -178,7 +178,7 @@ pub fn getMouseY() f32
 
 --> `pixels`
 
-* **Only** line draw calls can be used in this batch 
+* Line & circle line draw can olsa be used in non-textured line batch
 
 --> `lines`
 
@@ -307,7 +307,7 @@ pub fn initRenderer(alloc: *std.mem.Allocator, pwin: *const Window) !void
 
 --> Do **not** call this if you already called the `deinit` function
 ```zig
-pub fn deinitRenderer() !void 
+pub fn deinitRenderer() void 
 ```
 * Clears the screen with given colour
 ```zig
@@ -316,6 +316,14 @@ pub fn clearScreen(r: f32, g: f32, b: f32, a: f32) void
 * Returns the 2D camera
 ```zig
 pub fn getCamera2D() *Camera2D 
+```
+* Enables the autoflush
+```zig
+pub fn enableAutoFlushBatch2D() void 
+```
+* Disables the autoflush
+```zig
+pub fn disableAutoFlushBatch2D() void 
 ```
 * Enables the texture
 ```zig
@@ -327,7 +335,7 @@ pub fn disableTextureBatch2D() void
 ```
 * Returns the enabled texture
 ```zig
-pub fn getTextureBatch2D() Error!texture
+pub fn getTextureBatch2D() Error!Texture
 ```
 * Enables the custom batch
 ```zig
@@ -343,7 +351,7 @@ pub fn getCustomBatch2D(comptime batchtype: type) Error!*batchtype
 ```
 * Pushes the batch
 ```zig
-pub fn pushBatch2D(tag: Renderer2DBatchTag) !void 
+pub fn pushBatch2D(tag: Renderer2DBatchTag) Error!void 
 ```
 * Pops the batch
 ```zig
@@ -351,7 +359,7 @@ pub fn popBatch2D() Error!void
 ```
 * Flushes the batch
 ```zig
-pub fn flushBatch2D() !void 
+pub fn flushBatch2D() Error!void 
 ```
 * Draws a pixel
 ```zig
@@ -379,6 +387,18 @@ pub fn drawCircle(position: Vec2f, radius: f32, colour: Colour) Error!void
 * Draws a circle
 ```zig
 pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) Error!void 
+```
+* Draws a circle line
+
+--> The segments are lowered for sake of making it smaller on the batch
+
+```zig
+pub fn drawCircleLines(position: Vec2f, radius: f32, colour: Colour) Error!void 
+```
+
+* Draws a circle lines
+```zig
+pub fn drawCircleLinesAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) Error!void 
 ```
 
 * Draws a rectangle

@@ -160,7 +160,10 @@ pub const Texture = struct {
         var data: ?*u8 = c.stbi_load(@ptrCast([*c]const u8, path), &result.width, &result.height, &nrchannels, 4);
         defer c.stbi_image_free(data);
 
-        if (data == null) return Error.FailedToLoadTexture;
+        if (data == null) {
+            gl.texturesDelete(1, @ptrCast([*]u32, &result.id));
+            return Error.FailedToLoadTexture;
+        }
 
         gl.textureTexImage2D(gl.TextureType.t2D, 0, gl.TextureFormat.rgba8, result.width, result.height, 0, gl.TextureFormat.rgba, u8, data);
 
@@ -179,7 +182,10 @@ pub const Texture = struct {
         var data: ?*u8 = c.stbi_load_from_memory(@ptrCast([*c]const u8, mem), @intCast(i32, mem.len), &result.width, &result.height, &nrchannels, 4);
         defer c.stbi_image_free(data);
 
-        if (data == null) return Error.FailedToLoadTexture;
+        if (data == null) {
+            gl.texturesDelete(1, @ptrCast([*]u32, &result.id));
+            return Error.FailedToLoadTexture;
+        }
 
         gl.textureTexImage2D(gl.TextureType.t2D, 0, gl.TextureFormat.rgba8, result.width, result.height, 0, gl.TextureFormat.rgba, u8, data);
 

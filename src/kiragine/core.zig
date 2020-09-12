@@ -136,7 +136,7 @@ pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fi
 }
 
 /// Deinitializes the engine
-pub fn deinit() !void {
+pub fn deinit() Error!void {
     if (!pengineready) return Error.EngineIsNotInitialized;
 
     deinitRenderer();

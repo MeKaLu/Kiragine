@@ -22,7 +22,6 @@
 //    distribution.
 
 // TODO: 3D camera 
-// TODO: Draw circles lines
 // TODO: Text rendering
 // TODO: Some kind of ecs
 // TODO: Simple layering system
@@ -57,6 +56,8 @@ const Renderer2D = struct {
     current_quadbatch_shader: u32 = undefined,
     custombatch: bool = false,
 
+    autoflush: bool = true,
+
     notextureshader: u32 = 0,
     textureshader: u32 = 0,
     textured: bool = false,
@@ -64,6 +65,7 @@ const Renderer2D = struct {
 
 pub const Renderer2DBatchTag = enum {
     pixels,
+    /// Line & circle line draw can olsa be used in non-textured line batch
     lines,
     /// Triangle & rectangle & circles draw can also be used in non-textured triangle batch
     triangles,
@@ -129,7 +131,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
         }
 
         /// Draw the particles
-        pub fn draw(self: Self) !void {
+        pub fn draw(self: Self) Error!void {
             if (self.drawfn) |fun| {
                 var i: u32 = 0;
                 while (i < Self.maxparticle) : (i += 1) {
@@ -369,6 +371,16 @@ pub fn getCamera2D() *Camera2D {
     return &prenderer2D.cam;
 }
 
+/// Enables the autoflush
+pub fn enableAutoFlushBatch2D() void {
+    prenderer2D.autoflush = true;
+}
+
+/// Disables the autoflush
+pub fn disableAutoFlushBatch2D() void {
+    prenderer2D.autoflush = true;
+}
+
 /// Enables the texture
 pub fn enableTextureBatch2D(t: Texture) void {
     prenderer2D.current_texture = t;
@@ -441,7 +453,7 @@ pub fn getCustomBatch2D(comptime batchtype: type) Error!*batchtype {
 }
 
 /// Pushes the batch
-pub fn pushBatch2D(tag: Renderer2DBatchTag) !void {
+pub fn pushBatch2D(tag: Renderer2DBatchTag) Error!void {
     prenderer2D.tag = tag;
 
     switch (prenderer2D.tag) {
@@ -543,7 +555,7 @@ pub fn popBatch2D() Error!void {
 }
 
 /// Flushes the batch
-pub fn flushBatch2D() !void {
+pub fn flushBatch2D() Error!void {
     const tag = prenderer2D.tag;
     try popBatch2D();
     try pushBatch2D(tag);
@@ -565,7 +577,17 @@ pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void {
         .{ .position = pixel, .colour = colour },
     }) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            return Error.FailedToDraw;
+            if (prenderer2D.autoflush) {
+                try flushBatch2D();
+                try prenderer2D.current_quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
+                    .{ .position = pixel, .colour = colour },
+                    .{ .position = pixel, .colour = colour },
+                    .{ .position = pixel, .colour = colour },
+                    .{ .position = pixel, .colour = colour }
+                });
+            } else {
+                return Error.FailedToDraw;
+            }
         } else return err;
     };
 }
@@ -586,7 +608,17 @@ pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) Error!void {
         .{ .position = line1, .colour = colour },
     }) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            return Error.FailedToDraw;
+            if (prenderer2D.autoflush) {
+                try flushBatch2D();
+                try prenderer2D.current_quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
+                    .{ .position = line0, .colour = colour },
+                    .{ .position = line1, .colour = colour },
+                    .{ .position = line1, .colour = colour },
+                    .{ .position = line1, .colour = colour },
+                });
+            } else {
+                return Error.FailedToDraw;
+            }
         } else return err;
     };
 }
@@ -607,7 +639,17 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error
         .{ .position = right, .colour = colour },
     }) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            return Error.FailedToDraw;
+            if (prenderer2D.autoflush) {
+                try flushBatch2D();
+                try prenderer2D.current_quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
+                    .{ .position = left, .colour = colour },
+                    .{ .position = top, .colour = colour },
+                    .{ .position = right, .colour = colour },
+                    .{ .position = right, .colour = colour },
+                });
+            } else {
+                return Error.FailedToDraw;
+            }
         } else return err;
     };
 }
@@ -668,7 +710,12 @@ pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle:
         angle += steplen * 2;
         pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
             if (err == renderer.Error.ObjectOverflow) {
-                return Error.FailedToDraw;
+                if (prenderer2D.autoflush) {
+                    try flushBatch2D();
+                    try pdrawRectangle(pos0, pos1, pos2, pos3, colour);
+                } else {
+                    return Error.FailedToDraw;
+                }
             } else return err;
         };
     }
@@ -687,9 +734,95 @@ pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle:
         
         pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
             if (err == renderer.Error.ObjectOverflow) {
-                return Error.FailedToDraw;
+                if (prenderer2D.autoflush) {
+                    try flushBatch2D();
+                    try pdrawRectangle(pos0, pos1, pos2, pos3, colour);
+                } else {
+                    return Error.FailedToDraw;
+                }
             } else return err;
         };
+    }
+}
+
+/// Draws a circle lines
+/// The segments are lowered for sake of 
+/// making it smaller on the batch
+pub fn drawCircleLines(position: Vec2f, radius: f32, colour: Colour) Error!void {
+    try drawCircleLinesAdvanced(position, radius, 0, 360, 16, colour);
+}
+
+// Source: https://github.com/raysan5/raylib/blob/f1ed8be5d7e2d966d577a3fd28e53447a398b3b6/src/shapes.c#L298 
+/// Draws a circle lines
+pub fn drawCircleLinesAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) Error!void {
+    const SMOOTH_CIRCLE_ERROR_RATE = comptime 0.5;
+    
+    var iradius = radius;
+    var istartangle = startangle;
+    var iendangle = endangle;
+    var isegments = segments;
+
+    if (iradius <= 0.0) iradius = 0.1;  // Avoid div by zero
+    // Function expects (endangle > startangle)
+    if (iendangle < istartangle) {
+        // Swap values
+        const tmp = istartangle;
+        istartangle = iendangle;
+        iendangle = tmp;
+    }
+    
+    if (isegments < 4) {
+        // Calculate the maximum angle between segments based on the error rate (usually 0.5f)
+        const th: f32 = std.math.acos(2 * std.math.pow(f32, 1 - SMOOTH_CIRCLE_ERROR_RATE / iradius, 2) - 1);
+        isegments = @floatToInt(i32, (@intToFloat(f32, (iendangle - istartangle)) * std.math.ceil(2 * m.PI / th) / 360));
+
+        if (isegments <= 0) isegments = 4;
+    }
+    const steplen: f32 = @intToFloat(f32, iendangle - istartangle) / @intToFloat(f32, isegments);
+    var angle: f32 = @intToFloat(f32, istartangle);
+
+    // Hide the cap lines when the circle is full
+    var showcaplines: bool = true;
+    var limit: i32 = 2 * (isegments + 2);
+
+    if (@mod(iendangle - istartangle, 350) == 0) {
+        limit = 2 * isegments;
+        showcaplines = false;
+    }
+    
+    if (showcaplines) {
+        const pos0 = Vec2f{ .x = center.x, .y = center.y };
+        const pos1 = Vec2f{ 
+            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius, 
+            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius
+        };
+
+        try drawLine(pos0, pos1, colour); 
+    }
+
+    var i: i32 = 0;
+    while (i < isegments) : (i += 1) {
+        const pos1 = Vec2f{ 
+            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius, 
+            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius
+        };
+        const pos2 = Vec2f{ 
+            .x = center.x + std.math.sin(m.deg2radf(angle + steplen)) * iradius, 
+            .y = center.y + std.math.cos(m.deg2radf(angle + steplen)) * iradius
+        };
+        
+        try drawLine(pos1, pos2, colour); 
+        angle += steplen;
+    }
+    
+    if (showcaplines) {
+        const pos0 = Vec2f{ .x = center.x, .y = center.y };
+        const pos1 = Vec2f{ 
+            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius, 
+            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius
+        };
+        
+        try drawLine(pos0, pos1, colour); 
     }
 }
 
@@ -702,7 +835,12 @@ pub fn drawRectangle(rect: Rectangle, colour: Colour) Error!void {
 
     pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            return Error.FailedToDraw;
+            if (prenderer2D.autoflush) {
+                try flushBatch2D();
+                try pdrawRectangle(pos0, pos1, pos2, pos3, colour);
+            } else {
+                return Error.FailedToDraw;
+            }
         } else return err;
     };
 }
@@ -736,7 +874,12 @@ pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colou
 
     pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            return Error.FailedToDraw;
+            if (prenderer2D.autoflush) {
+                try flushBatch2D();
+                try pdrawRectangle(pos0, pos1, pos2, pos3, colour);
+            } else {
+                return Error.FailedToDraw;
+            }
         } else return err;
     };
 }
@@ -750,7 +893,12 @@ pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) Error!vo
 
     pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            return Error.FailedToDraw;
+            if (prenderer2D.autoflush) {
+                try flushBatch2D();
+                try pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour);
+            } else {
+                return Error.FailedToDraw;
+            }
         } else return err;
     };
 }
@@ -776,7 +924,12 @@ pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, ro
 
     pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour) catch |err| {
         if (err == renderer.Error.ObjectOverflow) {
-            return Error.FailedToDraw;
+            if (prenderer2D.autoflush) {
+                try flushBatch2D();
+                try pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour);
+            } else {
+                return Error.FailedToDraw;
+            }
         } else return err;
     };
 }

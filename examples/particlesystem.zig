@@ -63,13 +63,7 @@ fn draw() !void {
     //try particlesys.drawAsTriangles();
     
     // draws as circles
-    particlesys.drawAsCircles() catch |err| {
-        if (err == engine.Error.FailedToDraw) {
-            // Uhh, drawing circles takes too much on the batch
-            // Sorry....
-            try engine.printEndl(engine.LogLevel.info, "Drawing circles just overflowed the batch lmao", .{});
-        }
-    };
+    try particlesys.drawAsCircles(); 
 
     // Pops the current batch
     try engine.popBatch2D();
