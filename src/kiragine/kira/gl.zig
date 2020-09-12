@@ -24,6 +24,7 @@
 const c = @import("c.zig");
 const utils = @import("utils.zig");
 const std = @import("std");
+usingnamespace @import("log.zig");
 
 // DEF
 
@@ -214,7 +215,7 @@ pub fn shaderCompile(alloc: *std.mem.Allocator, source: []const u8, comptime typ
 
         c.glGetShaderInfoLog(result, len, &len, @ptrCast([*c]u8, msg));
 
-        try utils.printEndl(utils.LogLevel.err, "{}: {}", .{ source, msg });
+        std.log.alert("{}: {}", .{ source, msg });
         shaderDelete(result);
         alloc.free(msg);
         try utils.check(true, "kira/gl -> unable to compile shader!", .{});

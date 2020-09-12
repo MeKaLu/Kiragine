@@ -27,7 +27,4 @@ pub usingnamespace @import("renderer.zig");
 
 pub const kira = @import("kira/kira.zig");
 
-pub const LogLevel = @import("kira/utils.zig").LogLevel;
-pub const printEndl = @import("kira/utils.zig").printEndl;
-pub const printNoEndl = @import("kira/utils.zig").printNoEndl;
-pub const check = @import("kira/utils.zig").check;
+pub const check = kira.utils.check; 

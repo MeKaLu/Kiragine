@@ -1,6 +1,8 @@
 const std = @import("std");
 const engine = @import("kiragine");
 
+usingnamespace @import("kiragine").kira.log;
+
 const Ship = struct {
     firerate: f32 = 0.5,
     firetimer: f32 = 0,
@@ -109,7 +111,7 @@ fn update(deltatime: f32) !void {
             if (keyF == engine.Input.State.down) {
                 player.firetimer = 0.0;
                 player.firecount -= 1;
-                try engine.printEndl(engine.LogLevel.trace, "player: fire({})", .{player.firecount});
+                std.log.notice("player: fire({})", .{player.firecount});
 
                 playerbulletfactory.add(bullet) catch |err| {
                     if (err == engine.Error.CheckFailed) {

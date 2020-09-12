@@ -29,7 +29,9 @@ const renderer = @import("kira/renderer.zig");
 const gl = @import("kira/gl.zig");
 const input = @import("kira/input.zig");
 const window = @import("kira/window.zig");
-const utils = @import("kira/utils.zig");
+
+usingnamespace @import("kira/log.zig");
+const check = @import("kira/utils.zig").check;
 
 usingnamespace @import("sharedtypes.zig");
 usingnamespace @import("renderer.zig");
@@ -84,10 +86,6 @@ pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fi
     pwin = try allocator.create(Window);
     pinput = try allocator.create(Input);
 
-    try utils.initTimer();
-
-    try utils.check((try utils.logCreateFile("kiragine.log")) == false, "kiragine -> failed to create log file!", .{});
-
     try glfw.init();
     glfw.resizable(false);
     glfw.initGLProfile();
@@ -132,7 +130,7 @@ pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fi
     ptargetfps = 0;
     pengineready = true;
 
-    try utils.printEndl(utils.LogLevel.info, "Kiragine initialized! Size -> width:{} & height:{} ; Title:{}", .{ pwin.size.width, pwin.size.height, pwin.title });
+    std.log.info("Kiragine initialized! Size -> width:{} & height:{} ; Title:{}", .{ pwin.size.width, pwin.size.height, pwin.title });
 }
 
 /// Deinitializes the engine
@@ -145,9 +143,7 @@ pub fn deinit() Error!void {
     gl.deinit();
 
     glfw.deinit();
-    try utils.printEndl(utils.LogLevel.info, "Kiragine deinitialized!", .{});
-    try utils.check(utils.logCloseFile() == false, "kiragine -> failed to close log file!", .{});
-    utils.deinitTimer();
+    std.log.info("Kiragine deinitialized!", .{});
 
     allocator.destroy(pwin);
     allocator.destroy(pinput);

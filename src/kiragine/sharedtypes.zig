@@ -31,9 +31,10 @@ const glfw = @import("kira/glfw.zig");
 const renderer = @import("kira/renderer.zig");
 const input = @import("kira/input.zig");
 const window = @import("kira/window.zig");
-const utils = @import("kira/utils.zig");
 const gl = @import("kira/gl.zig");
 const c = @import("kira/c.zig");
+
+const utils = @import("kira/utils.zig");
 
 pub const Mat4x4f = mat4x4.Generic(f32);
 pub const Vec2f = vec2.Generic(f32);
@@ -70,7 +71,7 @@ const pError = error{
     /// Binding list has filled, cannot able to bind anymore
     NoEmptyBinding,
 
-    // Merge utils errors
+    // Merge kira errors
 
     /// Check has failed(expression was true)
     CheckFailed,

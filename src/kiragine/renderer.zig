@@ -30,10 +30,12 @@ const std = @import("std");
 
 const renderer = @import("kira/renderer.zig");
 const gl = @import("kira/gl.zig");
-const utils = @import("kira/utils.zig");
 const c = @import("kira/c.zig");
 const m = @import("kira/math/common.zig");
 usingnamespace @import("sharedtypes.zig");
+
+usingnamespace @import("kira/log.zig");
+const check = @import("kira/utils.zig").check;
 
 pub const Vertex2DNoTexture = comptime renderer.VertexGeneric(false, Vec2f);
 pub const Vertex2DTexture = comptime renderer.VertexGeneric(true, Vec2f);
@@ -140,7 +142,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                     }
                 }
             } else {
-                try utils.printEndl(utils.LogLevel.warn, "kiragine -> particle system draw fallbacks to drawing as rectangles", .{});
+                std.log.warn("kiragine -> particle system draw fallbacks to drawing as rectangles", .{});
                 try self.drawAsRectangle();
             }
         }
@@ -483,20 +485,20 @@ pub fn pushBatch2D(tag: Renderer2DBatchTag) Error!void {
         } else {
             shader = prenderer2D.notextureshader;
         }
-        try utils.check(shader == 0, "kiragine -> unable to use non-textured shader!", .{});
+        try check(shader == 0, "kiragine -> unable to use non-textured shader!", .{});
 
         mvploc = gl.shaderProgramGetUniformLocation(shader, "MVP");
-        try utils.check(mvploc == -1, "kiragine -> unable to use uniforms from non-textured shader!", .{});
+        try check(mvploc == -1, "kiragine -> unable to use uniforms from non-textured shader!", .{});
     } else {
         if (prenderer2D.custombatch) {
             shader = prenderer2D.current_quadbatch_shader;
         } else {
             shader = prenderer2D.textureshader;
         }
-        try utils.check(shader == 0, "kiragine -> unable to use textured shader!", .{});
+        try check(shader == 0, "kiragine -> unable to use textured shader!", .{});
 
         mvploc = gl.shaderProgramGetUniformLocation(shader, "MVP");
-        try utils.check(mvploc == -1, "kiragine -> unable to use uniforms from textured shader!", .{});
+        try check(mvploc == -1, "kiragine -> unable to use uniforms from textured shader!", .{});
     }
 
     gl.shaderProgramUse(shader);

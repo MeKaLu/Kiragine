@@ -1,4 +1,5 @@
 const std = @import("std");
+usingnamespace @import("kira").log;
 
 const kira_utils = @import("kira").utils;
 const kira_glfw = @import("kira").glfw;
@@ -86,9 +87,6 @@ fn submitFn(self: *Batch, vertex: [Batch.max_vertex_count]Vertex) kira_renderer.
 }
 
 pub fn main() !void {
-    try kira_utils.initTimer();
-    defer kira_utils.deinitTimer();
-
     try kira_glfw.init();
     defer kira_glfw.deinit();
     kira_glfw.resizable(false);
@@ -174,6 +172,6 @@ pub fn main() !void {
         frametime.sleep(targetfps);
 
         fps = fps.calculate(frametime);
-        kira_utils.printEndl(kira_utils.LogLevel.trace, "FPS: {}", .{fps.fps}) catch unreachable;
+        std.log.notice("FPS: {}", .{fps.fps}); 
     }
 }

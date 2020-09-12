@@ -1,4 +1,5 @@
 const std = @import("std");
+usingnamespace @import("kira").log;
 
 const utils = @import("kira").utils;
 const glfw = @import("kira").glfw;
@@ -182,9 +183,6 @@ fn submitFn(self: *Batch, vertex: [Batch.max_vertex_count]Vertex) renderer.Error
 }
 
 pub fn main() !void {
-    try utils.initTimer();
-    defer utils.deinitTimer();
-
     try glfw.init();
     defer glfw.deinit();
     glfw.resizable(false);
@@ -279,7 +277,7 @@ pub fn main() !void {
                 if (keyF == input.Info.State.down) {
                     player.firetimer = 0.0;
                     player.firecount -= 1;
-                    try utils.printEndl(utils.LogLevel.trace, "player: fire({})", .{player.firecount});
+                    std.log.notice("player: fire({})", .{player.firecount});
                     playerbulletfactory.add(bullet) catch |err| {
                         if (err == utils.Error.CheckFailed) {
                             player.firecount += 1;

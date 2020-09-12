@@ -22,13 +22,14 @@
 //    distribution.
 
 const c = @import("c.zig");
-const utils = @import("utils.zig");
+const std = @import("std");
+usingnamespace @import("log.zig");
 
 /// Error set
 pub const Error = error{GLFWFailedToInitialize};
 
 fn errorCallback(err: i32, desc: [*c]const u8) callconv(.C) void {
-    utils.printEndl(utils.LogLevel.err, "GLFW -> {}:{*}", .{ err, desc }) catch unreachable;
+    std.log.emerg("GLFW -> {}:{*}", .{ err, desc });
 }
 
 /// Initializes glfw

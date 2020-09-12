@@ -1,9 +1,10 @@
+const std = @import("std");
+usingnamespace @import("kira").log;
+
 const kira_utils = @import("kira").utils;
 const kira_glfw = @import("kira").glfw;
 const kira_gl = @import("kira").gl;
 const kira_window = @import("kira").window;
-
-const std = @import("std");
 
 var window_running = false;
 var targetfps: f64 = 1.0 / 60.0;
@@ -35,9 +36,6 @@ fn resizeCallback(handle: ?*c_void, w: i32, h: i32) void {
 }
 
 pub fn main() !void {
-    try kira_utils.initTimer();
-    defer kira_utils.deinitTimer();
-
     try kira_glfw.init();
     defer kira_glfw.deinit();
     kira_glfw.resizable(false);
@@ -110,7 +108,7 @@ pub fn main() !void {
             frametime.sleep(targetfps);
 
             fps = fps.calculate(frametime);
-            kira_utils.printEndl(kira_utils.LogLevel.trace, "FPS: {}", .{fps.fps}) catch unreachable;
+            std.log.notice("FPS: {}", .{fps.fps}); 
         }
 
         kira_gl.clearColour(0.1, 0.1, 0.1, 1.0);
