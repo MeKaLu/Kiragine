@@ -258,22 +258,20 @@ pub fn buildEngine(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mode, com
 
     // WARN: Building a shared library does not work on windows
     // There is a problem while linking windows dll's with Builder.addSharedLibrary
-    const shared = comptime if (std.Target.current.os.tag == .linux) true else false;
-    if (!shared) {
-        return buildEngineStatic(b, target, mode, enginepath);
-    }
+    
+    //const shared = comptime if (std.Target.current.os.tag == .linux) true else false;
+    // Building as dll is problematic, when the windows problem solved, i'll reconsider building as dll
+    return buildEngineStatic(b, target, mode, enginepath);
 
-    // WARN: Building a shared library does not work on windows
-    exe = b.addSharedLibrary("kiragine", enginepath ++ "src/kiragine/kiragine.zig", .{ .versioned = .{ .major = 1, .minor = 0, .patch = 2 }});
-    exe.setOutputDir("build");
+    //exe = b.addSharedLibrary("kiragine", enginepath ++ "src/kiragine/kiragine.zig", .{ .versioned = .{ .major = 1, .minor = 0, .patch = 0 }});
+    //exe.setOutputDir("build");
 
-    exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
-    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.0/include/");
-    exe.addIncludeDir(enginepath ++ "include/onefile/");
-    addSourceFiles(exe, target, enginepath);
+    //exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
+    //exe.addIncludeDir(enginepath ++ "include/onefile/");
+    //addSourceFiles(exe, target, enginepath);
 
-    exe.setBuildMode(mode);
-    exe.install();
+    //exe.setBuildMode(mode);
+    //exe.install();
 
-    return exe;
+    //return exe;
 }
