@@ -23,6 +23,10 @@
 * Texture is not available or corrupted
 
 --> `InvalidTexture`
+    
+* Custom batch already enabled
+
+--> `UnableToEnableCustomBatch`
   
 * Binding is not available
 
@@ -323,7 +327,19 @@ pub fn disableTextureBatch2D() void
 ```
 * Returns the enabled texture
 ```zig
-pub fn gettexturebatch2d() error!texture
+pub fn getTextureBatch2D() Error!texture
+```
+* Enables the custom batch
+```zig
+pub fn enableCustomBatch2D(comptime batchtype: type, batch: *batchtype, shader: u32) Error!void 
+```
+* Disables the custom batch
+```zig
+pub fn disableCustomBatch2D(comptime batchtype: type) void 
+```
+* Returns the current batch
+```zig
+pub fn getCustomBatch2D(comptime batchtype: type) Error!*batchtype 
 ```
 * Pushes the batch
 ```zig

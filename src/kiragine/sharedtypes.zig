@@ -60,6 +60,8 @@ const pError = error{
     FailedToDraw,
     /// Texture is not available or corrupted
     InvalidTexture,
+    /// Custom batch already enabled
+    UnableToEnableCustomBatch,
 
     // Merge input errors
 

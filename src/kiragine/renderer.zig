@@ -26,8 +26,6 @@
 // TODO: Text rendering
 // TODO: Some kind of ecs
 // TODO: Simple layering system
-// TODO: Custom shaders with custom batch systems
-// (abstract it and make it work with the current draw methods. API breaking change!)
 
 const std = @import("std");
 
@@ -38,12 +36,12 @@ const c = @import("kira/c.zig");
 const m = @import("kira/math/common.zig");
 usingnamespace @import("sharedtypes.zig");
 
-const Vertex2DNoTexture = comptime renderer.VertexGeneric(false, Vec2f);
-const Vertex2DTexture = comptime renderer.VertexGeneric(true, Vec2f);
+pub const Vertex2DNoTexture = comptime renderer.VertexGeneric(false, Vec2f);
+pub const Vertex2DTexture = comptime renderer.VertexGeneric(true, Vec2f);
 // Maybe create a white texture and remove this?
 // With that you'll be able to use textured batchs with shape draw calls
-const Batch2DQuadNoTexture = comptime renderer.BatchGeneric(1024 * 8, 6, 4, Vertex2DNoTexture);
-const Batch2DQuadTexture = comptime renderer.BatchGeneric(1024 * 8, 6, 4, Vertex2DTexture);
+pub const Batch2DQuadNoTexture = comptime renderer.BatchGeneric(1024 * 8, 6, 4, Vertex2DNoTexture);
+pub const Batch2DQuadTexture = comptime renderer.BatchGeneric(1024 * 8, 6, 4, Vertex2DTexture);
 
 /// Helper type
 const Renderer2D = struct {
@@ -53,7 +51,12 @@ const Renderer2D = struct {
     quadbatch_notexture: Batch2DQuadNoTexture = Batch2DQuadNoTexture{},
     quadbatch_texture: Batch2DQuadTexture = Batch2DQuadTexture{},
     current_texture: Texture = Texture{},
-    
+
+    current_quadbatch_notexture: *Batch2DQuadNoTexture = undefined,
+    current_quadbatch_texture: *Batch2DQuadTexture = undefined,
+    current_quadbatch_shader: u32 = undefined,
+    custombatch: bool = false,
+
     notextureshader: u32 = 0,
     textureshader: u32 = 0,
     textured: bool = false,
@@ -338,6 +341,9 @@ pub fn initRenderer(alloc: *std.mem.Allocator, pwin: *const Window) !void {
 
     try prenderer2D.quadbatch_notexture.create(prenderer2D.notextureshader, pnoTextureShaderAttribs);
     try prenderer2D.quadbatch_texture.create(prenderer2D.textureshader, pTextureShaderAttribs);
+
+    prenderer2D.current_quadbatch_notexture = &prenderer2D.quadbatch_notexture;
+    prenderer2D.current_quadbatch_texture = &prenderer2D.quadbatch_texture;
 }
 
 /// Deinitializes the renderer
@@ -383,6 +389,57 @@ pub fn getTextureBatch2D() Error!Texture {
     return Error.InvalidTexture;
 }
 
+/// Enables the custom batch
+pub fn enableCustomBatch2D(comptime batchtype: type, batch: *batchtype, shader: u32) Error!void {
+    if (batchtype == Batch2DQuadNoTexture) {
+        if (prenderer2D.custombatch) {
+            return Error.UnableToEnableCustomBatch; 
+        }
+        prenderer2D.custombatch = true;
+        prenderer2D.current_quadbatch_notexture = batch;
+        prenderer2D.current_quadbatch_shader = shader;
+        return;
+    } else if (batchtype == Batch2DQuadTexture) {
+        if (prenderer2D.custombatch) {
+            return Error.UnableToEnableCustomBatch; 
+        }
+        prenderer2D.custombatch = true;
+        prenderer2D.current_quadbatch_texture = batch;
+        prenderer2D.current_quadbatch_shader = shader;
+        return;
+    }
+
+    @compileError("Unknown batch type!");
+}
+
+/// Disables the custom batch
+pub fn disableCustomBatch2D(comptime batchtype: type) void {
+    if (batchtype == Batch2DQuadNoTexture) {
+        prenderer2D.custombatch = false;
+        prenderer2D.current_quadbatch_notexture = undefined;
+        prenderer2D.current_quadbatch_shader = 0;
+        return;
+    } else if (batchtype == Batch2DQuadTexture) {
+        prenderer2D.custombatch = false;
+        prenderer2D.current_quadbatch_texture = undefined;
+        prenderer2D.current_quadbatch_shader = 0;
+        return;
+    }
+
+    @compileError("Unknown batch type!");
+}
+
+/// Returns the current batch 
+pub fn getCustomBatch2D(comptime batchtype: type) Error!*batchtype {
+    if (batchtype == Batch2DQuadNoTexture) {
+        return &current_quadbatch_notexture;
+    } else if (batchtype == Batch2DQuadTexture) {
+        return &current_quadbatch_texture;
+    }
+
+    @compileError("Unknown batch type!");
+}
+
 /// Pushes the batch
 pub fn pushBatch2D(tag: Renderer2DBatchTag) !void {
     prenderer2D.tag = tag;
@@ -390,32 +447,40 @@ pub fn pushBatch2D(tag: Renderer2DBatchTag) !void {
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.pixels => {
             if (prenderer2D.textured) return Error.InvalidBatch; // No textured lines
-            prenderer2D.quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
+            prenderer2D.current_quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
         },
         Renderer2DBatchTag.lines => {
             if (prenderer2D.textured) return Error.InvalidBatch; // No textured lines
-            prenderer2D.quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
+            prenderer2D.current_quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
         },
         Renderer2DBatchTag.triangles => {
             if (prenderer2D.textured) return Error.InvalidBatch; // No textured triangle
-            prenderer2D.quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
+            prenderer2D.current_quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
         },
         Renderer2DBatchTag.quads => {
-            prenderer2D.quadbatch_texture.submitfn = pTextureSubmitQuadfn;
-            prenderer2D.quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
+            prenderer2D.current_quadbatch_texture.submitfn = pTextureSubmitQuadfn;
+            prenderer2D.current_quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
         },
     }
 
     var shader: u32 = 0;
     var mvploc: i32 = -1;
     if (!prenderer2D.textured) {
-        shader = prenderer2D.notextureshader;
+        if (prenderer2D.custombatch) {
+            shader = prenderer2D.current_quadbatch_shader;
+        } else {
+            shader = prenderer2D.notextureshader;
+        }
         try utils.check(shader == 0, "kiragine -> unable to use non-textured shader!", .{});
 
         mvploc = gl.shaderProgramGetUniformLocation(shader, "MVP");
         try utils.check(mvploc == -1, "kiragine -> unable to use uniforms from non-textured shader!", .{});
     } else {
-        shader = prenderer2D.textureshader;
+        if (prenderer2D.custombatch) {
+            shader = prenderer2D.current_quadbatch_shader;
+        } else {
+            shader = prenderer2D.textureshader;
+        }
         try utils.check(shader == 0, "kiragine -> unable to use textured shader!", .{});
 
         mvploc = gl.shaderProgramGetUniformLocation(shader, "MVP");
@@ -433,13 +498,13 @@ pub fn popBatch2D() Error!void {
     defer {
         prenderer2D.cam.detach();
         if (prenderer2D.textured) {
-            prenderer2D.quadbatch_texture.submission_counter = 0;
-            prenderer2D.quadbatch_texture.vertex_list = undefined;
-            prenderer2D.quadbatch_texture.index_list = undefined;
+            prenderer2D.current_quadbatch_texture.submission_counter = 0;
+            prenderer2D.current_quadbatch_texture.vertex_list = undefined;
+            prenderer2D.current_quadbatch_texture.index_list = undefined;
         } else {
-            prenderer2D.quadbatch_notexture.submission_counter = 0;
-            prenderer2D.quadbatch_notexture.vertex_list = undefined;
-            prenderer2D.quadbatch_notexture.index_list = undefined;
+            prenderer2D.current_quadbatch_notexture.submission_counter = 0;
+            prenderer2D.current_quadbatch_notexture.vertex_list = undefined;
+            prenderer2D.current_quadbatch_notexture.index_list = undefined;
         }
     }
 
@@ -448,30 +513,30 @@ pub fn popBatch2D() Error!void {
             if (prenderer2D.textured) {
                 return Error.InvalidBatch;
             } else {
-                try prenderer2D.quadbatch_notexture.draw(gl.DrawMode.points);
+                try prenderer2D.current_quadbatch_notexture.draw(gl.DrawMode.points);
             }
         },
         Renderer2DBatchTag.lines => {
             if (prenderer2D.textured) {
                 return Error.InvalidBatch;
             } else {
-                try prenderer2D.quadbatch_notexture.draw(gl.DrawMode.lines);
+                try prenderer2D.current_quadbatch_notexture.draw(gl.DrawMode.lines);
             }
         },
         Renderer2DBatchTag.triangles => {
             if (prenderer2D.textured) {
                 return Error.InvalidBatch;
             } else {
-                try prenderer2D.quadbatch_notexture.draw(gl.DrawMode.triangles);
+                try prenderer2D.current_quadbatch_notexture.draw(gl.DrawMode.triangles);
             }
         },
         Renderer2DBatchTag.quads => {
             if (prenderer2D.textured) {
                 gl.textureBind(gl.TextureType.t2D, prenderer2D.current_texture.id);
-                try prenderer2D.quadbatch_texture.draw(gl.DrawMode.triangles);
+                try prenderer2D.current_quadbatch_texture.draw(gl.DrawMode.triangles);
                 gl.textureBind(gl.TextureType.t2D, 0);
             } else {
-                try prenderer2D.quadbatch_notexture.draw(gl.DrawMode.triangles);
+                try prenderer2D.current_quadbatch_notexture.draw(gl.DrawMode.triangles);
             }
         },
     }
@@ -493,7 +558,7 @@ pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void {
         },
         else => {},
     }
-    prenderer2D.quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
+    prenderer2D.current_quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
         .{ .position = pixel, .colour = colour },
         .{ .position = pixel, .colour = colour },
         .{ .position = pixel, .colour = colour },
@@ -514,7 +579,7 @@ pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) Error!void {
         },
         else => {},
     }
-    prenderer2D.quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
+    prenderer2D.current_quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
         .{ .position = line0, .colour = colour },
         .{ .position = line1, .colour = colour },
         .{ .position = line1, .colour = colour },
@@ -535,7 +600,7 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error
         },
         else => {},
     }
-    prenderer2D.quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
+    prenderer2D.current_quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
         .{ .position = left, .colour = colour },
         .{ .position = top, .colour = colour },
         .{ .position = right, .colour = colour },
@@ -789,7 +854,7 @@ fn pdrawRectangle(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, colour: Co
         },
         else => {},
     }
-    try prenderer2D.quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
+    try prenderer2D.current_quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
         .{ .position = pos0, .colour = colour },
         .{ .position = pos1, .colour = colour },
         .{ .position = pos2, .colour = colour },
@@ -839,7 +904,7 @@ fn pdrawTexture(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, srcrect: Rec
         .y = (src.y + src.height) / height,
     };
 
-    try prenderer2D.quadbatch_texture.submitDrawable([Batch2DQuadTexture.max_vertex_count]Vertex2DTexture{
+    try prenderer2D.current_quadbatch_texture.submitDrawable([Batch2DQuadTexture.max_vertex_count]Vertex2DTexture{
         .{ .position = pos0, .texcoord = t0, .colour = colour },
         .{ .position = pos1, .texcoord = t1, .colour = colour },
         .{ .position = pos2, .texcoord = t2, .colour = colour },
