@@ -378,7 +378,7 @@ pub fn enableAutoFlushBatch2D() void {
 
 /// Disables the autoflush
 pub fn disableAutoFlushBatch2D() void {
-    prenderer2D.autoflush = true;
+    prenderer2D.autoflush = false;
 }
 
 /// Enables the texture
