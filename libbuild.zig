@@ -264,7 +264,7 @@ pub fn buildEngine(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mode, com
     }
 
     // WARN: Building a shared library does not work on windows
-    exe = b.addSharedLibrary("kiragine", enginepath ++ "src/kiragine/kiragine.zig", Build.Version{ .major = 1, .minor = 0, .patch = 2 } );
+    exe = b.addSharedLibrary("kiragine", enginepath ++ "src/kiragine/kiragine.zig", .{ .versioned = .{ .major = 1, .minor = 0, .patch = 2 }});
     exe.setOutputDir("build");
 
     exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
