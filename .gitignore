@@ -5,3 +5,4 @@ build_runner.zig
 src/.vscode
 .ccls-cache/
 kiragine.log
+.vscode/settings.json

@@ -27,7 +27,7 @@ const Build = @import("std").build;
 const Builtin = @import("std").builtin;
 const Zig = @import("std").zig;
 
-const flags = [_][]const u8{ "-O2", "-std=c99" };
+const globalflags = [_][]const u8{ "-std=c99" };
 
 fn setup(exe: *Build.LibExeObjStep, target: Zig.CrossTarget) void {
     const target_os = exe.target.toTarget().os.tag;
@@ -48,55 +48,48 @@ fn setup(exe: *Build.LibExeObjStep, target: Zig.CrossTarget) void {
     }
 }
 
-fn addSourceFiles(exe: *Build.LibExeObjStep, target: Zig.CrossTarget, comptime enginepath: []const u8) void {
-    exe.linkSystemLibrary("c");
+fn compileGLFWWin32(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
+    const flags = [_][]const u8{ "-O2" } ++ globalflags;
+    exe.linkSystemLibrary("gdi32");
+    exe.linkSystemLibrary("opengl32");
 
-    const target_os = exe.target.toTarget().os.tag;
-    switch (target_os) {
-        .windows => {
-            exe.setTarget(target);
+    exe.defineCMacro("_GLFW_WIN32");
 
-            exe.subsystem = Builtin.SubSystem.Console;
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/wgl_context.c", &flags);
 
-            exe.linkSystemLibrary("gdi32");
-            exe.linkSystemLibrary("opengl32");
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_init.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_joystick.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_monitor.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_thread.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_time.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_window.c", &flags);
+}
 
-            exe.defineCMacro("_GLFW_WIN32");
+fn compileGLFWLinux(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
+    const flags = [_][]const u8{ "-O2" } ++ globalflags;
+    exe.linkSystemLibrary("X11");
 
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/wgl_context.c", &flags);
+    exe.defineCMacro("_GLFW_X11");
 
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_init.c", &flags);
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_joystick.c", &flags);
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_monitor.c", &flags);
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_thread.c", &flags);
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_time.c", &flags);
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/win32_window.c", &flags);
-        },
-        .linux => {
-            exe.setTarget(target);
-            exe.linkSystemLibrary("X11");
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/glx_context.c", &flags);
 
-            exe.defineCMacro("_GLFW_X11");
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/posix_thread.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/posix_time.c", &flags);
 
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/glx_context.c", &flags);
+    //exe.addCSourceFile("include/glfw-3.3.2/src/wl_init.c", &flags);
+    //exe.addCSourceFile("include/glfw-3.3.2/src/wl_window.c", &flags);
+    //exe.addCSourceFile("include/glfw-3.3.2/src/wl_monitor.c", &flags);
 
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/posix_thread.c", &flags);
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/posix_time.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/x11_init.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/x11_window.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/x11_monitor.c", &flags);
 
-            //exe.addCSourceFile("include/glfw-3.3.2/src/wl_init.c", &flags);
-            //exe.addCSourceFile("include/glfw-3.3.2/src/wl_window.c", &flags);
-            //exe.addCSourceFile("include/glfw-3.3.2/src/wl_monitor.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/xkb_unicode.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/linux_joystick.c", &flags);
+}
 
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/x11_init.c", &flags);
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/x11_window.c", &flags);
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/x11_monitor.c", &flags);
-
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/xkb_unicode.c", &flags);
-            exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/linux_joystick.c", &flags);
-        },
-        else => {},
-    }
-
+fn compileGLFWShared(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
+    const flags = [_][]const u8{ "-O2" } ++ globalflags;
     exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/init.c", &flags);
     exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/context.c", &flags);
     exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/input.c", &flags);
@@ -111,7 +104,90 @@ fn addSourceFiles(exe: *Build.LibExeObjStep, target: Zig.CrossTarget, comptime e
     //exe.addCSourceFile("include/glfw-3.3.2/src/null_joystick.c", &flags);
     //exe.addCSourceFile("include/glfw-3.3.2/src/null_monitor.c", &flags);
     //exe.addCSourceFile("include/glfw-3.3.2/src/null_window.c", &flags);
+}
 
+fn compileFreetypeWin32(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
+    const flags = [_][]const u8{ "-O2", "-DFT2_BUILD_LIBRARY" } ++ globalflags;
+    const p = enginepath ++ "include/freetype-2.10.0/"; 
+    exe.addCSourceFile(p ++ "builds/windows/ftdebug.c", &flags);
+}
+
+fn compileFreetypeShared(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
+    const flags = [_][]const u8{ "-O2", "-DFT2_BUILD_LIBRARY" } ++ globalflags;
+    const p = enginepath ++ "include/freetype-2.10.0/"; 
+    const ftpsharedsrc = comptime [_][]const u8{
+      p ++ "src/autofit/autofit.c",
+      p ++ "src/base/ftbase.c",
+      p ++ "src/base/ftbbox.c",
+      p ++ "src/base/ftbdf.c",
+      p ++ "src/base/ftbitmap.c",
+      p ++ "src/base/ftcid.c",
+      p ++ "src/base/ftfstype.c",
+      p ++ "src/base/ftgasp.c",
+      p ++ "src/base/ftglyph.c",
+      p ++ "src/base/ftgxval.c",
+      p ++ "src/base/ftinit.c",
+      p ++ "src/base/ftmm.c",
+      p ++ "src/base/ftotval.c",
+      p ++ "src/base/ftpatent.c",
+      p ++ "src/base/ftpfr.c",
+      p ++ "src/base/ftstroke.c",
+      p ++ "src/base/ftsynth.c",
+      p ++ "src/base/ftsystem.c",
+      p ++ "src/base/fttype1.c",
+      p ++ "src/base/ftwinfnt.c",
+      p ++ "src/bdf/bdf.c",
+      p ++ "src/bzip2/ftbzip2.c",
+      p ++ "src/cache/ftcache.c",
+      p ++ "src/cff/cff.c",
+      p ++ "src/cid/type1cid.c",
+      p ++ "src/gzip/ftgzip.c",
+      p ++ "src/lzw/ftlzw.c",
+      p ++ "src/pcf/pcf.c",
+      p ++ "src/pfr/pfr.c",
+      p ++ "src/psaux/psaux.c",
+      p ++ "src/pshinter/pshinter.c",
+      p ++ "src/psnames/psnames.c",
+      p ++ "src/raster/raster.c",
+      p ++ "src/sfnt/sfnt.c",
+      p ++ "src/smooth/smooth.c",
+      p ++ "src/truetype/truetype.c",
+      p ++ "src/type1/type1.c",
+      p ++ "src/type42/type42.c",
+      p ++ "src/winfonts/winfnt.c",
+    };
+
+    var i: u32 = 0;
+    while (i < ftpsharedsrc.len) : (i += 1) {
+        exe.addCSourceFile(ftpsharedsrc[i], &flags);
+    }
+}
+
+fn addSourceFiles(exe: *Build.LibExeObjStep, target: Zig.CrossTarget, comptime enginepath: []const u8) void {
+    exe.linkSystemLibrary("c");
+
+    const target_os = exe.target.toTarget().os.tag;
+    switch (target_os) {
+        .windows => {
+            exe.setTarget(target);
+
+            exe.subsystem = Builtin.SubSystem.Console;
+
+            compileGLFWWin32(exe, enginepath);
+            compileFreetypeWin32(exe, enginepath);
+        },
+        .linux => {
+            exe.setTarget(target);
+
+            compileGLFWLinux(exe, enginepath);
+        },
+        else => {},
+    }
+
+    compileGLFWShared(exe, enginepath);
+    compileFreetypeShared(exe, enginepath);
+
+    const flags = [_][]const u8{ "-O3" } ++ globalflags;
     exe.addCSourceFile(enginepath ++ "include/onefile/GLAD/gl.c", &flags);
     exe.addCSourceFile(enginepath ++ "include/onefile/stb/image.c", &flags);
 }
@@ -124,6 +200,7 @@ pub fn buildExe(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mode, path: 
     setup(exe, target);
 
     exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
+    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.0/include/");
     exe.addIncludeDir(enginepath ++ "include/onefile/");
 
     exe.addLibPath("build/");
@@ -145,6 +222,7 @@ pub fn buildExePrimitive(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mod
     setup(exe, target);
 
     exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
+    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.0/include/");
     exe.addIncludeDir(enginepath ++ "include/onefile/");
 
     exe.addLibPath("build/");
@@ -165,6 +243,7 @@ pub fn buildEngineStatic(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mod
     exe.setOutputDir("build");
 
     exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
+    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.0/include/");
     exe.addIncludeDir(enginepath ++ "include/onefile/");
     addSourceFiles(exe, target, enginepath);
 
@@ -185,10 +264,11 @@ pub fn buildEngine(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mode, com
     }
 
     // WARN: Building a shared library does not work on windows
-    exe = b.addSharedLibrary("kiragine", enginepath ++ "src/kiragine/kiragine.zig", Build.Version{ .major = 1, .minor = 0, .patch = 0 });
+    exe = b.addSharedLibrary("kiragine", enginepath ++ "src/kiragine/kiragine.zig", Build.Version{ .major = 1, .minor = 0, .patch = 2 } );
     exe.setOutputDir("build");
 
     exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
+    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.0/include/");
     exe.addIncludeDir(enginepath ++ "include/onefile/");
     addSourceFiles(exe, target, enginepath);
 
