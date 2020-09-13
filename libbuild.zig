@@ -27,7 +27,7 @@ const Build = @import("std").build;
 const Builtin = @import("std").builtin;
 const Zig = @import("std").zig;
 
-const globalflags = [_][]const u8{ "-std=c99" };
+const globalflags = [_][]const u8{"-std=c99"};
 
 fn setup(exe: *Build.LibExeObjStep, target: Zig.CrossTarget) void {
     const target_os = exe.target.toTarget().os.tag;
@@ -49,7 +49,7 @@ fn setup(exe: *Build.LibExeObjStep, target: Zig.CrossTarget) void {
 }
 
 fn compileGLFWWin32(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
-    const flags = [_][]const u8{ "-O2" } ++ globalflags;
+    const flags = [_][]const u8{"-O2"} ++ globalflags;
     exe.linkSystemLibrary("gdi32");
     exe.linkSystemLibrary("opengl32");
 
@@ -66,7 +66,7 @@ fn compileGLFWWin32(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) 
 }
 
 fn compileGLFWLinux(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
-    const flags = [_][]const u8{ "-O2" } ++ globalflags;
+    const flags = [_][]const u8{"-O2"} ++ globalflags;
     exe.linkSystemLibrary("X11");
 
     exe.defineCMacro("_GLFW_X11");
@@ -89,7 +89,7 @@ fn compileGLFWLinux(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) 
 }
 
 fn compileGLFWShared(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
-    const flags = [_][]const u8{ "-O2" } ++ globalflags;
+    const flags = [_][]const u8{"-O2"} ++ globalflags;
     exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/init.c", &flags);
     exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/context.c", &flags);
     exe.addCSourceFile(enginepath ++ "include/glfw-3.3.2/src/input.c", &flags);
@@ -108,53 +108,61 @@ fn compileGLFWShared(exe: *Build.LibExeObjStep, comptime enginepath: []const u8)
 
 fn compileFreetypeWin32(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
     const flags = [_][]const u8{ "-O2", "-DFT2_BUILD_LIBRARY" } ++ globalflags;
-    const p = enginepath ++ "include/freetype-2.10.0/"; 
+    const p = enginepath ++ "include/freetype-2.10.2/";
     exe.addCSourceFile(p ++ "builds/windows/ftdebug.c", &flags);
+    exe.addCSourceFile(p ++ "src/base/ftsystem.c", &flags);
+}
+
+fn compileFreetypePosix(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
+    const flags = [_][]const u8{ "-O2", "-DFT2_BUILD_LIBRARY" } ++ globalflags;
+    const p = enginepath ++ "include/freetype-2.10.2/";
+    //exe.addCSourceFile(p ++ "builds/unix/ftsystem.c", &flags);
+    exe.addCSourceFile(p ++ "src/base/ftdebug.c", &flags);
+    exe.addCSourceFile(p ++ "src/base/ftsystem.c", &flags);
 }
 
 fn compileFreetypeShared(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
     const flags = [_][]const u8{ "-O2", "-DFT2_BUILD_LIBRARY" } ++ globalflags;
-    const p = enginepath ++ "include/freetype-2.10.0/"; 
+    const p = enginepath ++ "include/freetype-2.10.2/";
     const ftpsharedsrc = comptime [_][]const u8{
-      p ++ "src/autofit/autofit.c",
-      p ++ "src/base/ftbase.c",
-      p ++ "src/base/ftbbox.c",
-      p ++ "src/base/ftbdf.c",
-      p ++ "src/base/ftbitmap.c",
-      p ++ "src/base/ftcid.c",
-      p ++ "src/base/ftfstype.c",
-      p ++ "src/base/ftgasp.c",
-      p ++ "src/base/ftglyph.c",
-      p ++ "src/base/ftgxval.c",
-      p ++ "src/base/ftinit.c",
-      p ++ "src/base/ftmm.c",
-      p ++ "src/base/ftotval.c",
-      p ++ "src/base/ftpatent.c",
-      p ++ "src/base/ftpfr.c",
-      p ++ "src/base/ftstroke.c",
-      p ++ "src/base/ftsynth.c",
-      p ++ "src/base/ftsystem.c",
-      p ++ "src/base/fttype1.c",
-      p ++ "src/base/ftwinfnt.c",
-      p ++ "src/bdf/bdf.c",
-      p ++ "src/bzip2/ftbzip2.c",
-      p ++ "src/cache/ftcache.c",
-      p ++ "src/cff/cff.c",
-      p ++ "src/cid/type1cid.c",
-      p ++ "src/gzip/ftgzip.c",
-      p ++ "src/lzw/ftlzw.c",
-      p ++ "src/pcf/pcf.c",
-      p ++ "src/pfr/pfr.c",
-      p ++ "src/psaux/psaux.c",
-      p ++ "src/pshinter/pshinter.c",
-      p ++ "src/psnames/psnames.c",
-      p ++ "src/raster/raster.c",
-      p ++ "src/sfnt/sfnt.c",
-      p ++ "src/smooth/smooth.c",
-      p ++ "src/truetype/truetype.c",
-      p ++ "src/type1/type1.c",
-      p ++ "src/type42/type42.c",
-      p ++ "src/winfonts/winfnt.c",
+        p ++ "src/autofit/autofit.c",
+        p ++ "src/base/ftbase.c",
+        p ++ "src/base/ftbbox.c",
+        p ++ "src/base/ftbdf.c",
+        p ++ "src/base/ftbitmap.c",
+        p ++ "src/base/ftcid.c",
+        p ++ "src/base/ftfstype.c",
+        p ++ "src/base/ftgasp.c",
+        p ++ "src/base/ftglyph.c",
+        p ++ "src/base/ftgxval.c",
+        p ++ "src/base/ftinit.c",
+        p ++ "src/base/ftmm.c",
+        p ++ "src/base/ftotval.c",
+        p ++ "src/base/ftpatent.c",
+        p ++ "src/base/ftpfr.c",
+        p ++ "src/base/ftstroke.c",
+        p ++ "src/base/ftsynth.c",
+        p ++ "src/base/fttype1.c",
+        p ++ "src/base/ftwinfnt.c",
+        p ++ "src/bdf/bdf.c",
+        p ++ "src/bzip2/ftbzip2.c",
+        p ++ "src/cache/ftcache.c",
+        p ++ "src/cff/cff.c",
+        p ++ "src/cid/type1cid.c",
+        p ++ "src/gzip/ftgzip.c",
+        p ++ "src/lzw/ftlzw.c",
+        p ++ "src/pcf/pcf.c",
+        p ++ "src/pfr/pfr.c",
+        p ++ "src/psaux/psaux.c",
+        p ++ "src/pshinter/pshinter.c",
+        p ++ "src/psnames/psnames.c",
+        p ++ "src/raster/raster.c",
+        p ++ "src/sfnt/sfnt.c",
+        p ++ "src/smooth/smooth.c",
+        p ++ "src/truetype/truetype.c",
+        p ++ "src/type1/type1.c",
+        p ++ "src/type42/type42.c",
+        p ++ "src/winfonts/winfnt.c",
     };
 
     var i: u32 = 0;
@@ -180,6 +188,7 @@ fn addSourceFiles(exe: *Build.LibExeObjStep, target: Zig.CrossTarget, comptime e
             exe.setTarget(target);
 
             compileGLFWLinux(exe, enginepath);
+            compileFreetypePosix(exe, enginepath);
         },
         else => {},
     }
@@ -187,7 +196,7 @@ fn addSourceFiles(exe: *Build.LibExeObjStep, target: Zig.CrossTarget, comptime e
     compileGLFWShared(exe, enginepath);
     compileFreetypeShared(exe, enginepath);
 
-    const flags = [_][]const u8{ "-O3" } ++ globalflags;
+    const flags = [_][]const u8{"-O3"} ++ globalflags;
     exe.addCSourceFile(enginepath ++ "include/onefile/GLAD/gl.c", &flags);
     exe.addCSourceFile(enginepath ++ "include/onefile/stb/image.c", &flags);
 }
@@ -200,7 +209,7 @@ pub fn buildExe(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mode, path: 
     setup(exe, target);
 
     exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
-    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.0/include/");
+    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.2/include/");
     exe.addIncludeDir(enginepath ++ "include/onefile/");
 
     exe.addLibPath("build/");
@@ -222,7 +231,7 @@ pub fn buildExePrimitive(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mod
     setup(exe, target);
 
     exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
-    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.0/include/");
+    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.2/include/");
     exe.addIncludeDir(enginepath ++ "include/onefile/");
 
     exe.addLibPath("build/");
@@ -243,7 +252,8 @@ pub fn buildEngineStatic(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mod
     exe.setOutputDir("build");
 
     exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
-    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.0/include/");
+    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.2/include/");
+    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.2/include/freetype/config");
     exe.addIncludeDir(enginepath ++ "include/onefile/");
     addSourceFiles(exe, target, enginepath);
 
@@ -258,7 +268,7 @@ pub fn buildEngine(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mode, com
 
     // WARN: Building a shared library does not work on windows
     // There is a problem while linking windows dll's with Builder.addSharedLibrary
-    
+
     //const shared = comptime if (std.Target.current.os.tag == .linux) true else false;
     // Building as dll is problematic, when the windows problem solved, i'll reconsider building as dll
     return buildEngineStatic(b, target, mode, enginepath);

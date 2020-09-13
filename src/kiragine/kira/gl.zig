@@ -64,10 +64,13 @@ pub const TextureType = enum {
     t2D,
 };
 
+// zig fmt: off
 /// Texture formats
 pub const TextureFormat = enum {
-    rgb, rgb8, rgb32f, rgba, rgba8, rgba32f
+    rgb, rgb8, rgb32f, rgba, rgba8, rgba32f, 
+    red, alpha
 };
+// zig fmt: on
 
 /// Texture paramater types
 pub const TextureParamaterType = enum {
@@ -405,6 +408,8 @@ fn pdecideTextureFormat(comptime typ: TextureFormat) u32 {
         TextureFormat.rgba => return c.GL_RGBA,
         TextureFormat.rgba8 => return c.GL_RGBA8,
         TextureFormat.rgba32f => return c.GL_RGBA32F,
+        TextureFormat.red => return c.GL_RED,
+        TextureFormat.alpha => return c.GL_ALPHA,
     }
 }
 

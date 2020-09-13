@@ -36,7 +36,7 @@ fn draw() !void {
 pub fn main() !void {
     try engine.init(null, null, draw, windowWidth, windowHeight, title, targetfps, std.heap.page_allocator);
 
-    const t = @embedFile("../test.png");
+    const t = @embedFile("../assets/test.png");
     texture = try engine.Texture.createFromPNGMemory(t);
     // or load it from file
     // texture = try engine.Texture.createFromPNG(filepath);

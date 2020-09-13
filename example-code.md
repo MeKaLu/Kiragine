@@ -21,6 +21,8 @@ pub fn build(b: *Builder) void {
 ```
 `zig build` and done!
 
+If you are getting `xx.h` file not found error while compiling on **linux** on ubuntu please install `xorg-dev` package.
+
 ## Basic engine initialization
 ```zig
 const std = @import("std");
