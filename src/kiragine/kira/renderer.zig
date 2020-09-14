@@ -31,9 +31,6 @@ const vec3 = @import("math/vec3.zig");
 const Vec2f = vec2.Generic(f32);
 const Vec3f = vec3.Generic(f32);
 
-/// Error set
-pub const Error = error{ FailedToGenerateBuffers, ObjectOverflow, VertexOverflow, IndexOverflow, UnknownSubmitFn };
-
 /// Colour generic struct
 pub fn ColourGeneric(comptime typ: type) type {
     switch (typ) {
@@ -112,11 +109,11 @@ pub fn BatchGeneric(max_object: u32, max_index: u32, max_vertex: u32, comptime v
         vertex_list: [max_object_count][max_vertex_count]vertex_type = undefined,
         index_list: [max_object_count][max_index_count]u32 = undefined,
 
-        submitfn: ?fn (self: *Self, vertex: [Self.max_vertex_count]vertex_type) Error!void = null,
+        submitfn: ?fn (self: *Self, vertex: [Self.max_vertex_count]vertex_type) anyerror!void = null,
         submission_counter: u32 = 0,
 
         /// Creates the batch
-        pub fn create(self: *Self, shaderprogram: u32, shadersetattribs: fn () void) Error!void {
+        pub fn create(self: *Self, shaderprogram: u32, shadersetattribs: fn () void) !void {
             self.submission_counter = 0;
             gl.vertexArraysGen(1, @ptrCast([*]u32, &self.vertex_array));
             gl.buffersGen(2, &self.buffers);
@@ -124,7 +121,7 @@ pub fn BatchGeneric(max_object: u32, max_index: u32, max_vertex: u32, comptime v
             if (self.vertex_array == 0 or self.buffers[0] == 0 or self.buffers[1] == 0) {
                 gl.vertexArraysDelete(1, @ptrCast([*]const u32, &self.vertex_array));
                 gl.buffersDelete(2, @ptrCast([*]const u32, &self.buffers));
-                return Error.FailedToGenerateBuffers;
+                return error.FailedToGenerateBuffers;
             }
 
             gl.vertexArrayBind(self.vertex_array);
@@ -151,39 +148,39 @@ pub fn BatchGeneric(max_object: u32, max_index: u32, max_vertex: u32, comptime v
         }
 
         /// Set the vertex data from set and given position
-        pub fn submitVertex(self: *Self, firstposition: u32, lastposition: u32, data: Vertex) Error!void {
+        pub fn submitVertex(self: *Self, firstposition: u32, lastposition: u32, data: Vertex) !void {
             if (firstposition >= Self.max_object_count) {
-                return Error.ObjectOverflow;
+                return error.ObjectOverflow;
             } else if (lastposition >= Self.max_vertex_count) {
-                return Error.VertexOverflow;
+                return error.VertexOverflow;
             }
             self.vertex_list[firstposition][lastposition] = data;
         }
 
         /// Set the index data from set and given position
-        pub fn submitIndex(self: *Self, firstposition: u32, lastposition: u32, data: u32) Error!void {
+        pub fn submitIndex(self: *Self, firstposition: u32, lastposition: u32, data: u32) !void {
             if (firstposition >= Self.max_object_count) {
-                return Error.ObjectOverflow;
+                return error.ObjectOverflow;
             } else if (lastposition >= Self.max_index_count) {
-                return Error.IndexOverflow;
+                return error.IndexOverflow;
             }
             self.index_list[firstposition][lastposition] = data;
         }
 
         /// Submit a drawable object
-        pub fn submitDrawable(self: *Self, obj: [Self.max_vertex_count]vertex_type) Error!void {
+        pub fn submitDrawable(self: *Self, obj: [Self.max_vertex_count]vertex_type) !void {
             if (self.submission_counter >= Self.max_object_count) {
-                return Error.ObjectOverflow;
+                return error.ObjectOverflow;
             } else if (self.submitfn) |fun| {
                 try fun(self, obj);
                 return;
             }
-            return Error.UnknownSubmitFn;
+            return error.UnknownSubmitFn;
         }
 
         /// Draw the submitted objects
-        pub fn draw(self: Self, drawmode: gl.DrawMode) Error!void {
-            if (self.submission_counter > Self.max_object_count) return Error.ObjectOverflow;
+        pub fn draw(self: Self, drawmode: gl.DrawMode) !void {
+            if (self.submission_counter > Self.max_object_count) return error.ObjectOverflow;
             gl.vertexArrayBind(self.vertex_array);
             defer gl.vertexArrayBind(0);
 

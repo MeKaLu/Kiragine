@@ -153,7 +153,7 @@ fn shaderAttribs() void {
     gl.shaderProgramSetVertexAttribPointer(1, 4, f32, false, stride, @intToPtr(?*const c_void, @byteOffsetOf(Vertex, "colour")));
 }
 
-fn submitFn(self: *Batch, vertex: [Batch.max_vertex_count]Vertex) renderer.Error!void {
+fn submitFn(self: *Batch, vertex: [Batch.max_vertex_count]Vertex) !void {
     try self.submitVertex(self.submission_counter, 0, vertex[0]);
     try self.submitVertex(self.submission_counter, 1, vertex[1]);
     try self.submitVertex(self.submission_counter, 2, vertex[2]);
@@ -204,7 +204,7 @@ pub fn main() !void {
     defer win.destroy() catch unreachable;
 
     inp.bindKey('A') catch |err| {
-        if (err == input.Error.NoEmptyBinding) {
+        if (err == error.NoEmptyBinding) {
             inp.clearAllBindings();
             try inp.bindKey('A');
         } else return err;
@@ -279,7 +279,7 @@ pub fn main() !void {
                     player.firecount -= 1;
                     std.log.notice("player: fire({})", .{player.firecount});
                     playerbulletfactory.add(bullet) catch |err| {
-                        if (err == utils.Error.CheckFailed) {
+                        if (err == error.CheckFailed) {
                             player.firecount += 1;
                         }
                     };

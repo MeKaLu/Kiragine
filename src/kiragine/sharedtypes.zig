@@ -47,61 +47,6 @@ pub const Camera2D = cam.Camera2D;
 pub const Colour = renderer.ColourGeneric(f32);
 pub const UColour = renderer.ColourGeneric(u8);
 
-/// Private Error set
-const pError = error{
-    /// Engine is not initialized, initialize it before using the engine
-    EngineIsNotInitialized,
-    /// Engine is initialized, cannot initialize it again
-    EngineIsInitialized,
-    /// Current batch cannot able to do thing you are just about to do
-    InvalidBatch,
-    /// Failes to load texture
-    FailedToLoadTexture,
-    /// Current batch has filled, cannot able to draw anymore
-    FailedToDraw,
-    /// Texture is not available or corrupted
-    InvalidTexture,
-    /// Custom batch already enabled
-    UnableToEnableCustomBatch,
-
-    // Merge input errors
-
-    /// Binding is not available
-    InvalidBinding,
-    /// Binding list has filled, cannot able to bind anymore
-    NoEmptyBinding,
-
-    // Merge kira errors
-
-    /// Check has failed(expression was true)
-    CheckFailed,
-
-    // Merge glfw errors
-
-    /// GLFW failed to initialize, check logs!
-    GLFWFailedToInitialize,
-
-    // Merge renderer errors
-
-    /// OpenGL failes to generate vbo, vao, ebo
-    FailedToGenerateBuffers,
-    /// Object list has been reached it's limits
-    /// and you are trying to write into it
-    ObjectOverflow,
-    /// Vertex list has been reached it's limits
-    /// and you are trying to write into it
-    VertexOverflow,
-    /// Index list has been reached it's limits
-    /// and you are trying to write into it
-    IndexOverflow,
-    /// Submit fn is not initialized
-    /// and you are trying to execute it
-    UnknownSubmitFn,
-};
-
-/// Error set
-pub const Error = pError || input.Error || utils.Error || glfw.Error || renderer.Error;
-
 /// Helper type for using MVP's
 pub const ModelMatrix = struct {
     model: Mat4x4f = Mat4x4f.identity(),
@@ -150,7 +95,7 @@ pub const Texture = struct {
     }
 
     /// Creates a texture from png file
-    pub fn createFromPNG(path: []const u8) Error!Texture {
+    pub fn createFromPNG(path: []const u8) !Texture {
         var result = Texture{};
         result.loadSetup();
         defer gl.textureBind(gl.TextureType.t2D, 0);
@@ -163,7 +108,7 @@ pub const Texture = struct {
 
         if (data == null) {
             gl.texturesDelete(1, @ptrCast([*]u32, &result.id));
-            return Error.FailedToLoadTexture;
+            return error.FailedToLoadTexture;
         }
 
         gl.textureTexImage2D(gl.TextureType.t2D, 0, gl.TextureFormat.rgba8, result.width, result.height, 0, gl.TextureFormat.rgba, u8, data);
@@ -172,7 +117,7 @@ pub const Texture = struct {
     }
 
     /// Creates a texture from png memory
-    pub fn createFromPNGMemory(mem: []const u8) Error!Texture {
+    pub fn createFromPNGMemory(mem: []const u8) !Texture {
         var result = Texture{};
         result.loadSetup();
         defer gl.textureBind(gl.TextureType.t2D, 0);
@@ -185,7 +130,7 @@ pub const Texture = struct {
 
         if (data == null) {
             gl.texturesDelete(1, @ptrCast([*]u32, &result.id));
-            return Error.FailedToLoadTexture;
+            return error.FailedToLoadTexture;
         }
 
         gl.textureTexImage2D(gl.TextureType.t2D, 0, gl.TextureFormat.rgba8, result.width, result.height, 0, gl.TextureFormat.rgba, u8, data);

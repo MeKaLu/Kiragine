@@ -104,11 +104,11 @@ pub const Texture = struct {
 ```
 * Creates a texture from png file
 ```zig
-pub fn createFromPNG(path: []const  u8) Error!Texture
+pub fn createFromPNG(path: []const  u8) !Texture
 ```
 * Creates a texture from png memory
 ```zig
-pub fn createFromPNGMemory(mem: []const  u8) Error!Texture
+pub fn createFromPNGMemory(mem: []const  u8) !Texture
 ```
 * Creates a texture from given colour
 ```zig
@@ -136,15 +136,15 @@ pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fi
 
 * Deinitializes the engine
 ```zig
-pub fn deinit() Error!void
+pub fn deinit() !void
 ```
 * Opens the window
 ```zig 
-pub fn open() Error!void
+pub fn open() !void
  ```
  * Closes the window
 ```zig 
-pub fn close() Error!void
+pub fn close() !void
  ```
  * Updates the engine
  ```zig 
@@ -248,7 +248,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
         list: [maxparticle]Particle = undefined,
 
         /// Draw function for drawing particle
-        drawfn: ?fn (self: Particle) Error!void = null
+        drawfn: ?fn (self: Particle) !void = null
 		
 		// functions ..
 	};
@@ -268,19 +268,19 @@ pub fn draw(self: *Self) !void
 ```
 * Draws the particles as rectangles
 ```zig
-pub fn drawAsRectangles(self: Self) Error!void 
+pub fn drawAsRectangles(self: Self) !void 
 ```
 * Draws the particles as triangles
 ```zig
-pub fn drawAsTriangles(self: Self) Error!void 
+pub fn drawAsTriangles(self: Self) !void 
 ```
 * Draws the particles as circles
 ```zig
-pub fn drawAsCircles(self: Self) Error!void 
+pub fn drawAsCircles(self: Self) !void 
 ```
 * Draws the particles as textures
 ```zig
-pub fn drawAsTextures(self: Self) Error!void 
+pub fn drawAsTextures(self: Self) !void 
 ```
 * Updates the particles 
 ```zig
@@ -335,11 +335,11 @@ pub fn disableTextureBatch2D() void
 ```
 * Returns the enabled texture
 ```zig
-pub fn getTextureBatch2D() Error!Texture
+pub fn getTextureBatch2D() !Texture
 ```
 * Enables the custom batch
 ```zig
-pub fn enableCustomBatch2D(comptime batchtype: type, batch: *batchtype, shader: u32) Error!void 
+pub fn enableCustomBatch2D(comptime batchtype: type, batch: *batchtype, shader: u32) !void 
 ```
 * Disables the custom batch
 ```zig
@@ -347,33 +347,33 @@ pub fn disableCustomBatch2D(comptime batchtype: type) void
 ```
 * Returns the current batch
 ```zig
-pub fn getCustomBatch2D(comptime batchtype: type) Error!*batchtype 
+pub fn getCustomBatch2D(comptime batchtype: type) !*batchtype 
 ```
 * Pushes the batch
 ```zig
-pub fn pushBatch2D(tag: Renderer2DBatchTag) Error!void 
+pub fn pushBatch2D(tag: Renderer2DBatchTag) !void 
 ```
 * Pops the batch
 ```zig
-pub fn popBatch2D() Error!void 
+pub fn popBatch2D() !void 
 ```
 * Flushes the batch
 ```zig
-pub fn flushBatch2D() Error!void 
+pub fn flushBatch2D() !void 
 ```
 * Draws a pixel
 ```zig
-pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void 
+pub fn drawPixel(pixel: Vec2f, colour: Colour) !void 
 ```
 
 * Draws a line
 ```zig
-pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) Error!void 
+pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) !void 
 ```
 
 * Draws a triangle
 ```zig
-pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error!void 
+pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) !void 
 ```
 
 * Draws a circle
@@ -381,47 +381,47 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error
 --> The segments are lowered for sake of making it smaller on the batch
 
 ```zig
-pub fn drawCircle(position: Vec2f, radius: f32, colour: Colour) Error!void 
+pub fn drawCircle(position: Vec2f, radius: f32, colour: Colour) !void 
 ```
 
 * Draws a circle
 ```zig
-pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) Error!void 
+pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) !void 
 ```
 * Draws a circle line
 
 --> The segments are lowered for sake of making it smaller on the batch
 
 ```zig
-pub fn drawCircleLines(position: Vec2f, radius: f32, colour: Colour) Error!void 
+pub fn drawCircleLines(position: Vec2f, radius: f32, colour: Colour) !void 
 ```
 
 * Draws a circle lines
 ```zig
-pub fn drawCircleLinesAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) Error!void 
+pub fn drawCircleLinesAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) !void 
 ```
 
 * Draws a rectangle
 ```zig
-pub fn drawRectangle(rect: Rectangle, colour: Colour) Error!void 
+pub fn drawRectangle(rect: Rectangle, colour: Colour) !void 
 ```
 
 * Draws a rectangle lines
 ```zig
-pub fn drawRectangleLines(rect: Rectangle, colour: Colour) Error!void 
+pub fn drawRectangleLines(rect: Rectangle, colour: Colour) !void 
 ```
 
 * Draws a rectangle rotated(rotation should be provided in radians)
 ```zig
-pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) Error!void 
+pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) !void 
 ```
 
 * Draws a texture
 ```zig
-pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) Error!void 
+pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) !void 
 ```
 
 * Draws a texture(rotation should be provided in radians)
 ```zig
-pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) Error!void 
+pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) !void 
 ```

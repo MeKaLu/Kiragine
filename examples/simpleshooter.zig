@@ -114,7 +114,7 @@ fn update(deltatime: f32) !void {
                 std.log.notice("player: fire({})", .{player.firecount});
 
                 playerbulletfactory.add(bullet) catch |err| {
-                    if (err == engine.Error.CheckFailed) {
+                    if (err == error.CheckFailed) {
                         player.firecount += 1;
                     }
                 };

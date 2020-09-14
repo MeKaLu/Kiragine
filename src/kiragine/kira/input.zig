@@ -24,9 +24,6 @@
 const c = @import("c.zig");
 const utils = @import("utils.zig");
 
-/// Error set
-pub const Error = error{ InvalidBinding, NoEmptyBinding };
-
 /// Input info
 pub const Info = struct {
     /// States
@@ -78,7 +75,7 @@ pub const Info = struct {
     }
 
     /// Binds a key
-    pub fn bindKey(self: *Info, key: i16) Error!void {
+    pub fn bindKey(self: *Info, key: i16) !void {
         var i: u8 = 0;
         var l = &self.key_list;
         while (i < max_key_count) : (i += 1) {
@@ -90,11 +87,11 @@ pub const Info = struct {
                 return;
             }
         }
-        return Error.NoEmptyBinding;
+        return error.NoEmptyBinding;
     }
 
     /// Unbinds a key
-    pub fn unbindKey(self: *Info, key: i16) Error!void {
+    pub fn unbindKey(self: *Info, key: i16) !void {
         var i: u8 = 0;
         var l = &self.key_list;
         while (i < max_key_count) : (i += 1) {
@@ -103,11 +100,11 @@ pub const Info = struct {
                 return;
             }
         }
-        return Error.InvalidBinding;
+        return error.InvalidBinding;
     }
 
     /// Binds a mouse button
-    pub fn bindMButton(self: *Info, key: i16) Error!void {
+    pub fn bindMButton(self: *Info, key: i16) !void {
         var i: u8 = 0;
         var l = &self.mbutton_list;
         while (i < max_mbutton_count) : (i += 1) {
@@ -119,11 +116,11 @@ pub const Info = struct {
                 return;
             }
         }
-        return Error.NoEmptyBinding;
+        return error.NoEmptyBinding;
     }
 
     /// Unbinds a mouse button
-    pub fn unbindMButton(self: *Info, key: i16) Error!void {
+    pub fn unbindMButton(self: *Info, key: i16) !void {
         var i: u8 = 0;
         var l = &self.mbutton_list;
         while (i < max_mbutton_count) : (i += 1) {
@@ -132,11 +129,11 @@ pub const Info = struct {
                 return;
             }
         }
-        return Error.InvalidBinding;
+        return error.InvalidBinding;
     }
 
     /// Returns a binded key state
-    pub fn keyState(self: *Info, key: i16) Error!State {
+    pub fn keyState(self: *Info, key: i16) !State {
         var i: u8 = 0;
         var l = &self.key_list;
         while (i < max_key_count) : (i += 1) {
@@ -144,11 +141,11 @@ pub const Info = struct {
                 return l[i].status;
             }
         }
-        return Error.InvalidBinding;
+        return error.InvalidBinding;
     }
 
     /// Returns a const reference to a binded key state
-    pub fn keyStatePtr(self: *Info, key: i16) Error!*const State {
+    pub fn keyStatePtr(self: *Info, key: i16) !*const State {
         var i: u8 = 0;
         var l = &self.key_list;
         while (i < max_key_count) : (i += 1) {
@@ -156,11 +153,11 @@ pub const Info = struct {
                 return &l[i].status;
             }
         }
-        return Error.InvalidBinding;
+        return error.InvalidBinding;
     }
 
     /// Returns a binded key state
-    pub fn mbuttonState(self: *Info, key: i16) Error!State {
+    pub fn mbuttonState(self: *Info, key: i16) !State {
         var i: u8 = 0;
         var l = &self.mbutton_list;
         while (i < max_mbutton_count) : (i += 1) {
@@ -168,11 +165,11 @@ pub const Info = struct {
                 return l[i].status;
             }
         }
-        return Error.InvalidBinding;
+        return error.InvalidBinding;
     }
 
     /// Returns a const reference to a binded key state
-    pub fn mbuttonStatePtr(self: *Info, key: i16) Error!*const State {
+    pub fn mbuttonStatePtr(self: *Info, key: i16) !*const State {
         var i: u8 = 0;
         var l = &self.mbutton_list;
         while (i < max_mbutton_count) : (i += 1) {
@@ -180,7 +177,7 @@ pub const Info = struct {
                 return &l[i].status;
             }
         }
-        return Error.InvalidBinding;
+        return error.InvalidBinding;
     }
 
     /// Handles the inputs

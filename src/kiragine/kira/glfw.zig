@@ -25,17 +25,14 @@ const c = @import("c.zig");
 const std = @import("std");
 usingnamespace @import("log.zig");
 
-/// Error set
-pub const Error = error{GLFWFailedToInitialize};
-
 fn errorCallback(err: i32, desc: [*c]const u8) callconv(.C) void {
     std.log.emerg("GLFW -> {}:{*}", .{ err, desc });
 }
 
 /// Initializes glfw
-pub fn init() Error!void {
+pub fn init() !void {
     _ = c.glfwSetErrorCallback(errorCallback);
-    if (c.glfwInit() == 0) return Error.GLFWFailedToInitialize;
+    if (c.glfwInit() == 0) return error.GLFWFailedToInitialize;
 }
 
 /// Deinitializes glfw

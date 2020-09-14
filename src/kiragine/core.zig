@@ -79,7 +79,7 @@ var allocator: *std.mem.Allocator = undefined;
 
 /// Initializes the engine
 pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fixedtime: f32) anyerror!void, draw2dfn: ?fn () anyerror!void, width: i32, height: i32, title: []const u8, fpslimit: u32, alloc: *std.mem.Allocator) !void {
-    if (pengineready) return Error.EngineIsInitialized;
+    if (pengineready) return error.EngineIsInitialized;
 
     allocator = alloc;
 
@@ -134,8 +134,8 @@ pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fi
 }
 
 /// Deinitializes the engine
-pub fn deinit() Error!void {
-    if (!pengineready) return Error.EngineIsNotInitialized;
+pub fn deinit() !void {
+    if (!pengineready) return error.EngineIsNotInitialized;
 
     deinitRenderer();
 
@@ -150,20 +150,20 @@ pub fn deinit() Error!void {
 }
 
 /// Opens the window 
-pub fn open() Error!void {
-    if (!pengineready) return Error.EngineIsNotInitialized;
+pub fn open() !void {
+    if (!pengineready) return error.EngineIsNotInitialized;
     pwinrun = true;
 }
 
 /// Closes the window 
-pub fn close() Error!void {
-    if (!pengineready) return Error.EngineIsNotInitialized;
+pub fn close() !void {
+    if (!pengineready) return error.EngineIsNotInitialized;
     pwinrun = false;
 }
 
 /// Updates the engine
 pub fn update() !void {
-    if (!pengineready) return Error.EngineIsNotInitialized;
+    if (!pengineready) return error.EngineIsNotInitialized;
 
     // Source: https://gafferongames.com/post/fix_your_timestep/
     var last: f64 = getElapsedTime();

@@ -47,7 +47,7 @@ pub fn main() !void {
     defer window.destroy() catch unreachable;
 
     input.bindKey('A') catch |err| {
-        if (err == kira_input.Error.NoEmptyBinding) {
+        if (err == error.NoEmptyBinding) {
             input.clearAllBindings();
             try input.bindKey('A');
         } else return err;

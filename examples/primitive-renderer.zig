@@ -57,7 +57,7 @@ fn shaderAttribs() void {
     kira_gl.shaderProgramSetVertexAttribPointer(1, 4, f32, false, stride, @intToPtr(?*const c_void, @byteOffsetOf(Vertex, "colour")));
 }
 
-fn submitFn(self: *Batch, vertex: [Batch.max_vertex_count]Vertex) kira_renderer.Error!void {
+fn submitFn(self: *Batch, vertex: [Batch.max_vertex_count]Vertex) !void {
     try self.submitVertex(self.submission_counter, 0, vertex[0]);
     try self.submitVertex(self.submission_counter, 1, vertex[1]);
     try self.submitVertex(self.submission_counter, 2, vertex[2]);

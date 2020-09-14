@@ -15,7 +15,7 @@ var particlesys = ParticleSystem{
     .drawfn = particledraw,
 };
 
-fn particledraw(self: engine.Particle) engine.Error!void {
+fn particledraw(self: engine.Particle) !void {
     const rect = engine.Rectangle{
         .x = self.position.x,
         .y = self.position.y,

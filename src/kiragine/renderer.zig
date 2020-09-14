@@ -124,7 +124,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
         list: [maxparticle]Particle = undefined,
 
         /// Draw function for drawing particle
-        drawfn: ?fn (self: Particle) Error!void = null,
+        drawfn: ?fn (self: Particle) !void = null,
 
         /// Clear the all particles
         pub fn clearAll(self: *Self) void {
@@ -133,7 +133,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
         }
 
         /// Draw the particles
-        pub fn draw(self: Self) Error!void {
+        pub fn draw(self: Self) !void {
             if (self.drawfn) |fun| {
                 var i: u32 = 0;
                 while (i < Self.maxparticle) : (i += 1) {
@@ -148,7 +148,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
         }
 
         /// Draws the particles as rectangles
-        pub fn drawAsRectangles(self: Self) Error!void {
+        pub fn drawAsRectangles(self: Self) !void {
             var i: u32 = 0;
             while (i < Self.maxparticle) : (i += 1) {
                 if (self.list[i].is_alive) {
@@ -164,7 +164,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
         }
         
         /// Draws the particles as triangles
-        pub fn drawAsTriangles(self: Self) Error!void {
+        pub fn drawAsTriangles(self: Self) !void {
             var i: u32 = 0;
             while (i < Self.maxparticle) : (i += 1) {
                 if (self.list[i].is_alive) {
@@ -179,7 +179,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
         }
         
         /// Draws the particles as circles
-        pub fn drawAsCircles(self: Self) Error!void {
+        pub fn drawAsCircles(self: Self) !void {
             var i: u32 = 0;
             while (i < Self.maxparticle) : (i += 1) {
                 if (self.list[i].is_alive) {
@@ -191,7 +191,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
         
         /// Draws the particles as textures
         /// Don't forget the enable texture batch!
-        pub fn drawAsTextures(self: Self) Error!void {
+        pub fn drawAsTextures(self: Self) !void {
             var i: u32 = 0;
             while (i < Self.maxparticle) : (i += 1) {
                 if (self.list[i].is_alive) {
@@ -396,18 +396,18 @@ pub fn disableTextureBatch2D() void {
 }
 
 /// Returns the enabled texture
-pub fn getTextureBatch2D() Error!Texture {
+pub fn getTextureBatch2D() !Texture {
     if (prenderer2D.textured) {
         return prenderer2D.current_texture;
     }
-    return Error.InvalidTexture;
+    return error.InvalidTexture;
 }
 
 /// Enables the custom batch
-pub fn enableCustomBatch2D(comptime batchtype: type, batch: *batchtype, shader: u32) Error!void {
+pub fn enableCustomBatch2D(comptime batchtype: type, batch: *batchtype, shader: u32) !void {
     if (batchtype == Batch2DQuadNoTexture) {
         if (prenderer2D.custombatch) {
-            return Error.UnableToEnableCustomBatch; 
+            return error.UnableToEnableCustomBatch; 
         }
         prenderer2D.custombatch = true;
         prenderer2D.current_quadbatch_notexture = batch;
@@ -415,7 +415,7 @@ pub fn enableCustomBatch2D(comptime batchtype: type, batch: *batchtype, shader: 
         return;
     } else if (batchtype == Batch2DQuadTexture) {
         if (prenderer2D.custombatch) {
-            return Error.UnableToEnableCustomBatch; 
+            return error.UnableToEnableCustomBatch; 
         }
         prenderer2D.custombatch = true;
         prenderer2D.current_quadbatch_texture = batch;
@@ -444,7 +444,7 @@ pub fn disableCustomBatch2D(comptime batchtype: type) void {
 }
 
 /// Returns the current batch 
-pub fn getCustomBatch2D(comptime batchtype: type) Error!*batchtype {
+pub fn getCustomBatch2D(comptime batchtype: type) !*batchtype {
     if (batchtype == Batch2DQuadNoTexture) {
         return &current_quadbatch_notexture;
     } else if (batchtype == Batch2DQuadTexture) {
@@ -455,20 +455,20 @@ pub fn getCustomBatch2D(comptime batchtype: type) Error!*batchtype {
 }
 
 /// Pushes the batch
-pub fn pushBatch2D(tag: Renderer2DBatchTag) Error!void {
+pub fn pushBatch2D(tag: Renderer2DBatchTag) !void {
     prenderer2D.tag = tag;
 
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.pixels => {
-            if (prenderer2D.textured) return Error.InvalidBatch; // No textured lines
+            if (prenderer2D.textured) return error.InvalidBatch; // No textured lines
             prenderer2D.current_quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
         },
         Renderer2DBatchTag.lines => {
-            if (prenderer2D.textured) return Error.InvalidBatch; // No textured lines
+            if (prenderer2D.textured) return error.InvalidBatch; // No textured lines
             prenderer2D.current_quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
         },
         Renderer2DBatchTag.triangles => {
-            if (prenderer2D.textured) return Error.InvalidBatch; // No textured triangle
+            if (prenderer2D.textured) return error.InvalidBatch; // No textured triangle
             prenderer2D.current_quadbatch_notexture.submitfn = pnoTextureSubmitQuadfn;
         },
         Renderer2DBatchTag.quads => {
@@ -508,7 +508,7 @@ pub fn pushBatch2D(tag: Renderer2DBatchTag) Error!void {
 }
 
 /// Pops the batch
-pub fn popBatch2D() Error!void {
+pub fn popBatch2D() !void {
     defer {
         prenderer2D.cam.detach();
         if (prenderer2D.textured) {
@@ -525,21 +525,21 @@ pub fn popBatch2D() Error!void {
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.pixels => {
             if (prenderer2D.textured) {
-                return Error.InvalidBatch;
+                return error.InvalidBatch;
             } else {
                 try prenderer2D.current_quadbatch_notexture.draw(gl.DrawMode.points);
             }
         },
         Renderer2DBatchTag.lines => {
             if (prenderer2D.textured) {
-                return Error.InvalidBatch;
+                return error.InvalidBatch;
             } else {
                 try prenderer2D.current_quadbatch_notexture.draw(gl.DrawMode.lines);
             }
         },
         Renderer2DBatchTag.triangles => {
             if (prenderer2D.textured) {
-                return Error.InvalidBatch;
+                return error.InvalidBatch;
             } else {
                 try prenderer2D.current_quadbatch_notexture.draw(gl.DrawMode.triangles);
             }
@@ -557,18 +557,18 @@ pub fn popBatch2D() Error!void {
 }
 
 /// Flushes the batch
-pub fn flushBatch2D() Error!void {
+pub fn flushBatch2D() !void {
     const tag = prenderer2D.tag;
     try popBatch2D();
     try pushBatch2D(tag);
 }
 
 /// Draws a pixel
-pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void {
-    if (prenderer2D.textured) return Error.InvalidBatch;
+pub fn drawPixel(pixel: Vec2f, colour: Colour) !void {
+    if (prenderer2D.textured) return error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.quads, Renderer2DBatchTag.triangles, Renderer2DBatchTag.lines => {
-            return Error.InvalidBatch;
+            return error.InvalidBatch;
         },
         else => {},
     }
@@ -578,7 +578,7 @@ pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void {
         .{ .position = pixel, .colour = colour },
         .{ .position = pixel, .colour = colour },
     }) catch |err| {
-        if (err == renderer.Error.ObjectOverflow) {
+        if (err == error.ObjectOverflow) {
             if (prenderer2D.autoflush) {
                 try flushBatch2D();
                 try prenderer2D.current_quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
@@ -588,18 +588,18 @@ pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void {
                     .{ .position = pixel, .colour = colour }
                 });
             } else {
-                return Error.FailedToDraw;
+                return error.FailedToDraw;
             }
         } else return err;
     };
 }
 
 /// Draws a line
-pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) Error!void {
-    if (prenderer2D.textured) return Error.InvalidBatch;
+pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) !void {
+    if (prenderer2D.textured) return error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.quads, Renderer2DBatchTag.triangles => {
-            return Error.InvalidBatch;
+            return error.InvalidBatch;
         },
         else => {},
     }
@@ -609,7 +609,7 @@ pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) Error!void {
         .{ .position = line1, .colour = colour },
         .{ .position = line1, .colour = colour },
     }) catch |err| {
-        if (err == renderer.Error.ObjectOverflow) {
+        if (err == error.ObjectOverflow) {
             if (prenderer2D.autoflush) {
                 try flushBatch2D();
                 try prenderer2D.current_quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
@@ -619,18 +619,18 @@ pub fn drawLine(line0: Vec2f, line1: Vec2f, colour: Colour) Error!void {
                     .{ .position = line1, .colour = colour },
                 });
             } else {
-                return Error.FailedToDraw;
+                return error.FailedToDraw;
             }
         } else return err;
     };
 }
 
 /// Draws a triangle
-pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error!void {
-    if (prenderer2D.textured) return Error.InvalidBatch;
+pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) !void {
+    if (prenderer2D.textured) return error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.lines => {
-            return Error.InvalidBatch;
+            return error.InvalidBatch;
         },
         else => {},
     }
@@ -640,7 +640,7 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error
         .{ .position = right, .colour = colour },
         .{ .position = right, .colour = colour },
     }) catch |err| {
-        if (err == renderer.Error.ObjectOverflow) {
+        if (err == error.ObjectOverflow) {
             if (prenderer2D.autoflush) {
                 try flushBatch2D();
                 try prenderer2D.current_quadbatch_notexture.submitDrawable([Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture{
@@ -650,7 +650,7 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error
                     .{ .position = right, .colour = colour },
                 });
             } else {
-                return Error.FailedToDraw;
+                return error.FailedToDraw;
             }
         } else return err;
     };
@@ -659,13 +659,13 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error
 /// Draws a circle
 /// The segments are lowered for sake of 
 /// making it smaller on the batch
-pub fn drawCircle(position: Vec2f, radius: f32, colour: Colour) Error!void {
+pub fn drawCircle(position: Vec2f, radius: f32, colour: Colour) !void {
     try drawCircleAdvanced(position, radius, 0, 360, 16, colour);
 }
 
 // Source: https://github.com/raysan5/raylib/blob/f1ed8be5d7e2d966d577a3fd28e53447a398b3b6/src/shapes.c#L209
 /// Draws a circle
-pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) Error!void {
+pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) !void {
     const SMOOTH_CIRCLE_ERROR_RATE = comptime 0.5;
     
     var iradius = radius;
@@ -711,12 +711,12 @@ pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle:
 
         angle += steplen * 2;
         pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
-            if (err == renderer.Error.ObjectOverflow) {
+            if (err == error.ObjectOverflow) {
                 if (prenderer2D.autoflush) {
                     try flushBatch2D();
                     try pdrawRectangle(pos0, pos1, pos2, pos3, colour);
                 } else {
-                    return Error.FailedToDraw;
+                    return error.FailedToDraw;
                 }
             } else return err;
         };
@@ -735,12 +735,12 @@ pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle:
         const pos3 = Vec2f{ .x = center.x, .y = center.y };
         
         pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
-            if (err == renderer.Error.ObjectOverflow) {
+            if (err == error.ObjectOverflow) {
                 if (prenderer2D.autoflush) {
                     try flushBatch2D();
                     try pdrawRectangle(pos0, pos1, pos2, pos3, colour);
                 } else {
-                    return Error.FailedToDraw;
+                    return error.FailedToDraw;
                 }
             } else return err;
         };
@@ -750,13 +750,13 @@ pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle:
 /// Draws a circle lines
 /// The segments are lowered for sake of 
 /// making it smaller on the batch
-pub fn drawCircleLines(position: Vec2f, radius: f32, colour: Colour) Error!void {
+pub fn drawCircleLines(position: Vec2f, radius: f32, colour: Colour) !void {
     try drawCircleLinesAdvanced(position, radius, 0, 360, 16, colour);
 }
 
 // Source: https://github.com/raysan5/raylib/blob/f1ed8be5d7e2d966d577a3fd28e53447a398b3b6/src/shapes.c#L298 
 /// Draws a circle lines
-pub fn drawCircleLinesAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) Error!void {
+pub fn drawCircleLinesAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) !void {
     const SMOOTH_CIRCLE_ERROR_RATE = comptime 0.5;
     
     var iradius = radius;
@@ -829,26 +829,26 @@ pub fn drawCircleLinesAdvanced(center: Vec2f, radius: f32, startangle: i32, enda
 }
 
 /// Draws a rectangle
-pub fn drawRectangle(rect: Rectangle, colour: Colour) Error!void {
+pub fn drawRectangle(rect: Rectangle, colour: Colour) !void {
     const pos0 = Vec2f{ .x = rect.x, .y = rect.y };
     const pos1 = Vec2f{ .x = rect.x + rect.width, .y = rect.y };
     const pos2 = Vec2f{ .x = rect.x + rect.width, .y = rect.y + rect.height };
     const pos3 = Vec2f{ .x = rect.x, .y = rect.y + rect.height };
 
     pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
-        if (err == renderer.Error.ObjectOverflow) {
+        if (err == error.ObjectOverflow) {
             if (prenderer2D.autoflush) {
                 try flushBatch2D();
                 try pdrawRectangle(pos0, pos1, pos2, pos3, colour);
             } else {
-                return Error.FailedToDraw;
+                return error.FailedToDraw;
             }
         } else return err;
     };
 }
 
 /// Draws a rectangle lines
-pub fn drawRectangleLines(rect: Rectangle, colour: Colour) Error!void {
+pub fn drawRectangleLines(rect: Rectangle, colour: Colour) !void {
     try drawRectangle(.{ .x = rect.x, .y = rect.y, .width = rect.width, .height = 1 }, colour);
     try drawRectangle(.{ .x = rect.x + rect.width - 1, .y = rect.y + 1, .width = 1, .height = rect.height - 2 }, colour);
     try drawRectangle(.{ .x = rect.x, .y = rect.y + rect.height - 1, .width = rect.width, .height = 1 }, colour);
@@ -856,7 +856,7 @@ pub fn drawRectangleLines(rect: Rectangle, colour: Colour) Error!void {
 }
 
 /// Draws a rectangle rotated(rotation should be provided in radians)
-pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) Error!void {
+pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) !void {
     var matrix = ModelMatrix{};
     matrix.translate(rect.x, rect.y, 0);
     matrix.translate(origin.x, origin.y, 0);
@@ -875,38 +875,38 @@ pub fn drawRectangleRotated(rect: Rectangle, origin: Vec2f, rotation: f32, colou
     const pos3 = Vec2f{ .x = rect.x + r3.x, .y = rect.y + r3.y };
 
     pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
-        if (err == renderer.Error.ObjectOverflow) {
+        if (err == error.ObjectOverflow) {
             if (prenderer2D.autoflush) {
                 try flushBatch2D();
                 try pdrawRectangle(pos0, pos1, pos2, pos3, colour);
             } else {
-                return Error.FailedToDraw;
+                return error.FailedToDraw;
             }
         } else return err;
     };
 }
 
 /// Draws a texture
-pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) Error!void {
+pub fn drawTexture(rect: Rectangle, srcrect: Rectangle, colour: Colour) !void {
     const pos0 = Vec2f{ .x = rect.x, .y = rect.y };
     const pos1 = Vec2f{ .x = rect.x + rect.width, .y = rect.y };
     const pos2 = Vec2f{ .x = rect.x + rect.width, .y = rect.y + rect.height };
     const pos3 = Vec2f{ .x = rect.x, .y = rect.y + rect.height };
 
     pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour) catch |err| {
-        if (err == renderer.Error.ObjectOverflow) {
+        if (err == error.ObjectOverflow) {
             if (prenderer2D.autoflush) {
                 try flushBatch2D();
                 try pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour);
             } else {
-                return Error.FailedToDraw;
+                return error.FailedToDraw;
             }
         } else return err;
     };
 }
 
 /// Draws a texture(rotation should be provided in radians)
-pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) Error!void {
+pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, rotation: f32, colour: Colour) !void {
     var matrix = ModelMatrix{};
     matrix.translate(rect.x, rect.y, 0);
     matrix.translate(origin.x, origin.y, 0);
@@ -925,12 +925,12 @@ pub fn drawTextureRotated(rect: Rectangle, srcrect: Rectangle, origin: Vec2f, ro
     const pos3 = Vec2f{ .x = rect.x + r3.x, .y = rect.y + r3.y };
 
     pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour) catch |err| {
-        if (err == renderer.Error.ObjectOverflow) {
+        if (err == error.ObjectOverflow) {
             if (prenderer2D.autoflush) {
                 try flushBatch2D();
                 try pdrawTexture(pos0, pos1, pos2, pos3, srcrect, colour);
             } else {
-                return Error.FailedToDraw;
+                return error.FailedToDraw;
             }
         } else return err;
     };
@@ -958,28 +958,28 @@ fn pTextureShaderAttribs() void {
     gl.shaderProgramSetVertexAttribPointer(2, 4, f32, false, stride, @intToPtr(?*const c_void, @byteOffsetOf(Vertex2DTexture, "colour")));
 }
 
-fn pnoTextureSubmitQuadfn(self: *Batch2DQuadNoTexture, vertex: [Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture) renderer.Error!void {
+fn pnoTextureSubmitQuadfn(self: *Batch2DQuadNoTexture, vertex: [Batch2DQuadNoTexture.max_vertex_count]Vertex2DNoTexture) !void {
     try psubmitVerticesQuad(Batch2DQuadNoTexture, self, vertex);
     try psubmitIndiciesQuad(Batch2DQuadNoTexture, self);
 
     self.submission_counter += 1;
 }
 
-fn pTextureSubmitQuadfn(self: *Batch2DQuadTexture, vertex: [Batch2DQuadTexture.max_vertex_count]Vertex2DTexture) renderer.Error!void {
+fn pTextureSubmitQuadfn(self: *Batch2DQuadTexture, vertex: [Batch2DQuadTexture.max_vertex_count]Vertex2DTexture) !void {
     try psubmitVerticesQuad(Batch2DQuadTexture, self, vertex);
     try psubmitIndiciesQuad(Batch2DQuadTexture, self);
 
     self.submission_counter += 1;
 }
 
-fn psubmitVerticesQuad(comptime typ: type, self: *typ, vertex: [typ.max_vertex_count]typ.Vertex) renderer.Error!void {
+fn psubmitVerticesQuad(comptime typ: type, self: *typ, vertex: [typ.max_vertex_count]typ.Vertex) !void {
     try self.submitVertex(self.submission_counter, 0, vertex[0]);
     try self.submitVertex(self.submission_counter, 1, vertex[1]);
     try self.submitVertex(self.submission_counter, 2, vertex[2]);
     try self.submitVertex(self.submission_counter, 3, vertex[3]);
 }
 
-fn psubmitIndiciesQuad(comptime typ: type, self: *typ) renderer.Error!void {
+fn psubmitIndiciesQuad(comptime typ: type, self: *typ) !void {
     if (self.submission_counter == 0) {
         try self.submitIndex(self.submission_counter, 0, 0);
         try self.submitIndex(self.submission_counter, 1, 1);
@@ -1001,11 +1001,11 @@ fn psubmitIndiciesQuad(comptime typ: type, self: *typ) renderer.Error!void {
     }
 }
 
-fn pdrawRectangle(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, colour: Colour) Error!void {
-    if (prenderer2D.textured) return Error.InvalidBatch;
+fn pdrawRectangle(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, colour: Colour) !void {
+    if (prenderer2D.textured) return error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.lines => {
-            return Error.InvalidBatch;
+            return error.InvalidBatch;
         },
         else => {},
     }
@@ -1017,11 +1017,11 @@ fn pdrawRectangle(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, colour: Co
     });
 }
 
-fn pdrawTexture(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, srcrect: Rectangle, colour: Colour) Error!void {
-    if (!prenderer2D.textured) return Error.InvalidBatch;
+fn pdrawTexture(pos0: Vec2f, pos1: Vec2f, pos2: Vec2f, pos3: Vec2f, srcrect: Rectangle, colour: Colour) !void {
+    if (!prenderer2D.textured) return error.InvalidBatch;
     switch (prenderer2D.tag) {
         Renderer2DBatchTag.triangles, Renderer2DBatchTag.lines => {
-            return Error.InvalidBatch;
+            return error.InvalidBatch;
         },
         else => {},
     }
