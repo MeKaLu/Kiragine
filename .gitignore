@@ -6,3 +6,4 @@ src/.vscode
 .ccls-cache/
 kiragine.log
 .vscode/settings.json
+testbuf

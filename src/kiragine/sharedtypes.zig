@@ -114,19 +114,19 @@ pub const ModelMatrix = struct {
         self.model = Mat4x4f.mul(self.sc, Mat4x4f.mul(self.trans, self.rot));
     }
 
-    /// Translate the matrix 
+    /// Translate the matrix
     pub fn translate(self: *ModelMatrix, x: f32, y: f32, z: f32) void {
         self.trans = Mat4x4f.translate(x, y, z);
         self.update();
     }
 
-    /// Rotate the matrix 
+    /// Rotate the matrix
     pub fn rotate(self: *ModelMatrix, x: f32, y: f32, z: f32, angle: f32) void {
         self.rot = Mat4x4f.rotate(x, y, z, angle);
         self.update();
     }
 
-    /// Scale the matrix 
+    /// Scale the matrix
     pub fn scale(self: *ModelMatrix, x: f32, y: f32, z: f32) void {
         self.sc = Mat4x4f.scale(x, y, z);
         self.update();

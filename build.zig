@@ -33,12 +33,17 @@ pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
 
     const examples = b.option(bool, "examples", "Compile examples?") orelse false;
+    const tests = b.option(bool, "tests", "Compile tests?") orelse false;
 
     var exe: *Build.LibExeObjStep = undefined;
     var run_cmd: *Build.RunStep = undefined;
     var run_step: *Build.Step = undefined;
 
     const lib = buildEngine(b, target, mode, "./");
+
+    if (tests) {
+        exe = buildExe(b, target, mode, "src/tests/atlaspacker.zig", "test-atlaspacker", lib, "./");
+    }
 
     if (examples) {
         exe = buildExe(b, target, mode, "examples/simpleshooter.zig", "simpleshooter", lib, "./");

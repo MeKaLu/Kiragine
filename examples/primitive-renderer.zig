@@ -137,6 +137,8 @@ pub fn main() !void {
         frametime.start();
 
         batch.submission_counter = 0;
+        batch.vertex_list = undefined;
+        batch.index_list = undefined;
 
         posx += @floatCast(f32, targetfps) * 100;
 
@@ -172,6 +174,6 @@ pub fn main() !void {
         frametime.sleep(targetfps);
 
         fps = fps.calculate(frametime);
-        std.log.notice("FPS: {}", .{fps.fps}); 
+        std.log.notice("FPS: {}", .{fps.fps});
     }
 }
