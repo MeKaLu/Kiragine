@@ -130,7 +130,7 @@ pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fi
     ptargetfps = 0;
     pengineready = true;
 
-    std.log.info("Kiragine initialized! Size -> width:{} & height:{} ; Title:{}", .{ pwin.size.width, pwin.size.height, pwin.title });
+    std.log.info("kiragine -> initialized! Size -> width:{} & height:{} ; Title:{}", .{ pwin.size.width, pwin.size.height, pwin.title });
 }
 
 /// Deinitializes the engine
@@ -143,19 +143,19 @@ pub fn deinit() Error!void {
     gl.deinit();
 
     glfw.deinit();
-    std.log.info("Kiragine deinitialized!", .{});
+    std.log.info("kiragine -> deinitialized!", .{});
 
     allocator.destroy(pwin);
     allocator.destroy(pinput);
 }
 
-/// Opens the window 
+/// Opens the window
 pub fn open() Error!void {
     if (!pengineready) return Error.EngineIsNotInitialized;
     pwinrun = true;
 }
 
-/// Closes the window 
+/// Closes the window
 pub fn close() Error!void {
     if (!pengineready) return Error.EngineIsNotInitialized;
     pwinrun = false;

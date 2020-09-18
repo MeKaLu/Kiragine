@@ -1,4 +1,5 @@
 const std = @import("std");
+usingnamespace @import("kiragine").kira.log;
 const engine = @import("kiragine");
 
 usingnamespace @import("kiragine").kira.log;

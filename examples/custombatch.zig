@@ -1,4 +1,5 @@
 const std = @import("std");
+usingnamespace @import("kiragine").kira.log;
 const engine = @import("kiragine");
 
 fn draw() !void {
@@ -98,10 +99,10 @@ pub fn main() !void {
 
     try engine.open();
 
-    // Enables the non-textured custom batch, 
+    // Enables the non-textured custom batch,
     // everything should be white, if not there is a problem with custom batch and shader
     try engine.enableCustomBatch2D(engine.Batch2DQuadNoTexture, &batch, shader);
-    
+
     try engine.update();
 
     // Disables the non-textured custom batch

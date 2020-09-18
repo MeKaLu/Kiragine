@@ -21,8 +21,7 @@
 // 3. This notice may not be removed or altered from any source
 //    distribution.
 
-// TODO: 3D camera 
-// TODO: Text rendering
+// TODO: 3D camera
 // TODO: Some kind of ecs
 // TODO: Simple layering system
 
@@ -48,7 +47,7 @@ pub const Batch2DQuadTexture = comptime renderer.BatchGeneric(1024 * 8, 6, 4, Ve
 const Renderer2D = struct {
     tag: Renderer2DBatchTag = Renderer2DBatchTag.quads,
     cam: Camera2D = Camera2D{},
-    
+
     quadbatch_notexture: Batch2DQuadNoTexture = Batch2DQuadNoTexture{},
     quadbatch_texture: Batch2DQuadTexture = Batch2DQuadTexture{},
     current_texture: Texture = Texture{},
@@ -84,18 +83,18 @@ pub const Rectangle = struct {
 
 /// Particle type
 pub const Particle = struct {
-    /// Particle position 
+    /// Particle position
     position: Vec2f = Vec2f{},
-    /// Particle size 
+    /// Particle size
     size: Vec2f = Vec2f{},
 
-    /// Particle velocity 
+    /// Particle velocity
     velocity: Vec2f = Vec2f{},
     /// Colour modifier(particle colour)
     colour: Colour = Colour{},
 
     /// Lifetime modifier,
-    /// Particle gonna die after this hits 0 
+    /// Particle gonna die after this hits 0
     lifetime: f32 = 0,
 
     /// Fade modifier,
@@ -106,7 +105,7 @@ pub const Particle = struct {
     /// Fade colour modifier
     /// Particles colour is gonna change over fade modifer,
     /// until hits this modifier value
-    fade_colour: Colour = colour, 
+    fade_colour: Colour = colour,
 
     /// Is particle alive?
     is_alive: bool = false,
@@ -162,7 +161,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                 }
             }
         }
-        
+
         /// Draws the particles as triangles
         pub fn drawAsTriangles(self: Self) Error!void {
             var i: u32 = 0;
@@ -177,7 +176,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                 }
             }
         }
-        
+
         /// Draws the particles as circles
         pub fn drawAsCircles(self: Self) Error!void {
             var i: u32 = 0;
@@ -188,7 +187,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                 }
             }
         }
-        
+
         /// Draws the particles as textures
         /// Don't forget the enable texture batch!
         pub fn drawAsTextures(self: Self) Error!void {
@@ -203,10 +202,10 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                         .height = self.list[i].size.y,
                     };
                     const srcrect = Rectangle{
-                        .x = 0, 
-                        .y = 0, 
-                        .width = t.width, 
-                        .height = t.height, 
+                        .x = 0,
+                        .y = 0,
+                        .width = t.width,
+                        .height = t.height,
                     };
                     try drawTexture(rect, srcrect, self.list[i].colour);
                 }
@@ -233,15 +232,15 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                         if (r < self.list[i].fade_colour.r) {
                             r = self.list[i].fade_colour.r;
                         } else r = ((r * 255.0) - (self.list[i].fade * fixedtime)) / 255.0;
-                        
+
                         if (g < self.list[i].fade_colour.g) {
                             g = self.list[i].fade_colour.g;
                         } else g = ((g * 255.0) - (self.list[i].fade * fixedtime)) / 255.0;
-                        
+
                         if (b < self.list[i].fade_colour.b) {
                             b = self.list[i].fade_colour.b;
                         } else b = ((b * 255.0) - (self.list[i].fade * fixedtime)) / 255.0;
-                        
+
                         if (alpha < self.list[i].fade_colour.a) {
                             alpha = self.list[i].fade_colour.a;
                         } else alpha = ((alpha * 255.0) - (self.list[i].fade * fixedtime)) / 255.0;
@@ -249,7 +248,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                         self.list[i].colour.a = alpha;
                         self.list[i].colour.r = r;
                         self.list[i].colour.g = g;
-                        self.list[i].colour.b = b; 
+                        self.list[i].colour.b = b;
                     } else self.list[i].is_alive = false;
                 }
             }
@@ -336,7 +335,7 @@ var allocator: *std.mem.Allocator = undefined;
 pub fn initRenderer(alloc: *std.mem.Allocator, pwin: *const Window) !void {
     allocator = alloc;
     prenderer2D = try allocator.create(Renderer2D);
-    
+
     prenderer2D.* = Renderer2D{};
     prenderer2D.cam.ortho = Mat4x4f.ortho(0, @intToFloat(f32, pwin.size.width), @intToFloat(f32, pwin.size.height), 0, -1, 1);
 
@@ -358,7 +357,7 @@ pub fn deinitRenderer() void {
 
     gl.shaderProgramDelete(prenderer2D.notextureshader);
     gl.shaderProgramDelete(prenderer2D.textureshader);
-    
+
     allocator.destroy(prenderer2D);
 }
 
@@ -407,7 +406,7 @@ pub fn getTextureBatch2D() Error!Texture {
 pub fn enableCustomBatch2D(comptime batchtype: type, batch: *batchtype, shader: u32) Error!void {
     if (batchtype == Batch2DQuadNoTexture) {
         if (prenderer2D.custombatch) {
-            return Error.UnableToEnableCustomBatch; 
+            return Error.UnableToEnableCustomBatch;
         }
         prenderer2D.custombatch = true;
         prenderer2D.current_quadbatch_notexture = batch;
@@ -415,7 +414,7 @@ pub fn enableCustomBatch2D(comptime batchtype: type, batch: *batchtype, shader: 
         return;
     } else if (batchtype == Batch2DQuadTexture) {
         if (prenderer2D.custombatch) {
-            return Error.UnableToEnableCustomBatch; 
+            return Error.UnableToEnableCustomBatch;
         }
         prenderer2D.custombatch = true;
         prenderer2D.current_quadbatch_texture = batch;
@@ -443,7 +442,7 @@ pub fn disableCustomBatch2D(comptime batchtype: type) void {
     @compileError("Unknown batch type!");
 }
 
-/// Returns the current batch 
+/// Returns the current batch
 pub fn getCustomBatch2D(comptime batchtype: type) Error!*batchtype {
     if (batchtype == Batch2DQuadNoTexture) {
         return &current_quadbatch_notexture;
@@ -585,7 +584,7 @@ pub fn drawPixel(pixel: Vec2f, colour: Colour) Error!void {
                     .{ .position = pixel, .colour = colour },
                     .{ .position = pixel, .colour = colour },
                     .{ .position = pixel, .colour = colour },
-                    .{ .position = pixel, .colour = colour }
+                    .{ .position = pixel, .colour = colour },
                 });
             } else {
                 return Error.FailedToDraw;
@@ -657,7 +656,7 @@ pub fn drawTriangle(left: Vec2f, top: Vec2f, right: Vec2f, colour: Colour) Error
 }
 
 /// Draws a circle
-/// The segments are lowered for sake of 
+/// The segments are lowered for sake of
 /// making it smaller on the batch
 pub fn drawCircle(position: Vec2f, radius: f32, colour: Colour) Error!void {
     try drawCircleAdvanced(position, radius, 0, 360, 16, colour);
@@ -667,13 +666,13 @@ pub fn drawCircle(position: Vec2f, radius: f32, colour: Colour) Error!void {
 /// Draws a circle
 pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) Error!void {
     const SMOOTH_CIRCLE_ERROR_RATE = comptime 0.5;
-    
+
     var iradius = radius;
     var istartangle = startangle;
     var iendangle = endangle;
     var isegments = segments;
 
-    if (iradius <= 0.0) iradius = 0.1;  // Avoid div by zero
+    if (iradius <= 0.0) iradius = 0.1; // Avoid div by zero
     // Function expects (endangle > startangle)
     if (iendangle < istartangle) {
         // Swap values
@@ -681,7 +680,7 @@ pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle:
         istartangle = iendangle;
         iendangle = tmp;
     }
-    
+
     if (isegments < 4) {
         // Calculate the maximum angle between segments based on the error rate (usually 0.5f)
         const th: f32 = std.math.acos(2 * std.math.pow(f32, 1 - SMOOTH_CIRCLE_ERROR_RATE / iradius, 2) - 1);
@@ -696,17 +695,17 @@ pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle:
     var i: i32 = 0;
     while (i < @divTrunc(isegments, 2)) : (i += 1) {
         const pos0 = Vec2f{ .x = center.x, .y = center.y };
-        const pos1 = Vec2f{ 
-            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius, 
-            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius
+        const pos1 = Vec2f{
+            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius,
+            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius,
         };
-        const pos2 = Vec2f{ 
-            .x = center.x + std.math.sin(m.deg2radf(angle + steplen)) * iradius, 
-            .y = center.y + std.math.cos(m.deg2radf(angle + steplen)) * iradius
+        const pos2 = Vec2f{
+            .x = center.x + std.math.sin(m.deg2radf(angle + steplen)) * iradius,
+            .y = center.y + std.math.cos(m.deg2radf(angle + steplen)) * iradius,
         };
-        const pos3 = Vec2f{ 
-            .x = center.x + std.math.sin(m.deg2radf(angle + steplen * 2)) * iradius, 
-            .y = center.y + std.math.cos(m.deg2radf(angle + steplen * 2)) * iradius
+        const pos3 = Vec2f{
+            .x = center.x + std.math.sin(m.deg2radf(angle + steplen * 2)) * iradius,
+            .y = center.y + std.math.cos(m.deg2radf(angle + steplen * 2)) * iradius,
         };
 
         angle += steplen * 2;
@@ -724,16 +723,16 @@ pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle:
     // NOTE: In case number of segments is odd, we add one last piece to the cake
     if (@mod(isegments, 2) != 0) {
         const pos0 = Vec2f{ .x = center.x, .y = center.y };
-        const pos1 = Vec2f{ 
-            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius, 
-            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius
+        const pos1 = Vec2f{
+            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius,
+            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius,
         };
-        const pos2 = Vec2f{ 
-            .x = center.x + std.math.sin(m.deg2radf(angle + steplen)) * iradius, 
-            .y = center.y + std.math.cos(m.deg2radf(angle + steplen)) * iradius
+        const pos2 = Vec2f{
+            .x = center.x + std.math.sin(m.deg2radf(angle + steplen)) * iradius,
+            .y = center.y + std.math.cos(m.deg2radf(angle + steplen)) * iradius,
         };
         const pos3 = Vec2f{ .x = center.x, .y = center.y };
-        
+
         pdrawRectangle(pos0, pos1, pos2, pos3, colour) catch |err| {
             if (err == renderer.Error.ObjectOverflow) {
                 if (prenderer2D.autoflush) {
@@ -748,23 +747,23 @@ pub fn drawCircleAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle:
 }
 
 /// Draws a circle lines
-/// The segments are lowered for sake of 
+/// The segments are lowered for sake of
 /// making it smaller on the batch
 pub fn drawCircleLines(position: Vec2f, radius: f32, colour: Colour) Error!void {
     try drawCircleLinesAdvanced(position, radius, 0, 360, 16, colour);
 }
 
-// Source: https://github.com/raysan5/raylib/blob/f1ed8be5d7e2d966d577a3fd28e53447a398b3b6/src/shapes.c#L298 
+// Source: https://github.com/raysan5/raylib/blob/f1ed8be5d7e2d966d577a3fd28e53447a398b3b6/src/shapes.c#L298
 /// Draws a circle lines
 pub fn drawCircleLinesAdvanced(center: Vec2f, radius: f32, startangle: i32, endangle: i32, segments: i32, colour: Colour) Error!void {
     const SMOOTH_CIRCLE_ERROR_RATE = comptime 0.5;
-    
+
     var iradius = radius;
     var istartangle = startangle;
     var iendangle = endangle;
     var isegments = segments;
 
-    if (iradius <= 0.0) iradius = 0.1;  // Avoid div by zero
+    if (iradius <= 0.0) iradius = 0.1; // Avoid div by zero
     // Function expects (endangle > startangle)
     if (iendangle < istartangle) {
         // Swap values
@@ -772,7 +771,7 @@ pub fn drawCircleLinesAdvanced(center: Vec2f, radius: f32, startangle: i32, enda
         istartangle = iendangle;
         iendangle = tmp;
     }
-    
+
     if (isegments < 4) {
         // Calculate the maximum angle between segments based on the error rate (usually 0.5f)
         const th: f32 = std.math.acos(2 * std.math.pow(f32, 1 - SMOOTH_CIRCLE_ERROR_RATE / iradius, 2) - 1);
@@ -791,40 +790,40 @@ pub fn drawCircleLinesAdvanced(center: Vec2f, radius: f32, startangle: i32, enda
         limit = 2 * isegments;
         showcaplines = false;
     }
-    
+
     if (showcaplines) {
         const pos0 = Vec2f{ .x = center.x, .y = center.y };
-        const pos1 = Vec2f{ 
-            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius, 
-            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius
+        const pos1 = Vec2f{
+            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius,
+            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius,
         };
 
-        try drawLine(pos0, pos1, colour); 
+        try drawLine(pos0, pos1, colour);
     }
 
     var i: i32 = 0;
     while (i < isegments) : (i += 1) {
-        const pos1 = Vec2f{ 
-            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius, 
-            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius
+        const pos1 = Vec2f{
+            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius,
+            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius,
         };
-        const pos2 = Vec2f{ 
-            .x = center.x + std.math.sin(m.deg2radf(angle + steplen)) * iradius, 
-            .y = center.y + std.math.cos(m.deg2radf(angle + steplen)) * iradius
+        const pos2 = Vec2f{
+            .x = center.x + std.math.sin(m.deg2radf(angle + steplen)) * iradius,
+            .y = center.y + std.math.cos(m.deg2radf(angle + steplen)) * iradius,
         };
-        
-        try drawLine(pos1, pos2, colour); 
+
+        try drawLine(pos1, pos2, colour);
         angle += steplen;
     }
-    
+
     if (showcaplines) {
         const pos0 = Vec2f{ .x = center.x, .y = center.y };
-        const pos1 = Vec2f{ 
-            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius, 
-            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius
+        const pos1 = Vec2f{
+            .x = center.x + std.math.sin(m.deg2radf(angle)) * iradius,
+            .y = center.y + std.math.cos(m.deg2radf(angle)) * iradius,
         };
-        
-        try drawLine(pos0, pos1, colour); 
+
+        try drawLine(pos0, pos1, colour);
     }
 }
 

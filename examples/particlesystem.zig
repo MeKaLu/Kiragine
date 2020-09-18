@@ -1,4 +1,5 @@
 const std = @import("std");
+usingnamespace @import("kiragine").kira.log;
 const engine = @import("kiragine");
 
 const maxparticle = 1500;
@@ -11,7 +12,7 @@ const targetfps = 60;
 
 var rand: std.rand.Xoroshiro128 = undefined;
 
-var particlesys = ParticleSystem{ 
+var particlesys = ParticleSystem{
     .drawfn = particledraw,
 };
 
@@ -55,15 +56,15 @@ fn draw() !void {
     //try particlesys.draw();
     // draws as rectangles
     //try particlesys.drawAsRectangles();
-    
+
     // draws as textures(Don't forget to enable texture batch!)
     // try particlesys.drawAsTextures();
-    
+
     // draws as triangles
     //try particlesys.drawAsTriangles();
-    
+
     // draws as circles
-    try particlesys.drawAsCircles(); 
+    try particlesys.drawAsCircles();
 
     // Pops the current batch
     try engine.popBatch2D();

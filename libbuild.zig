@@ -106,71 +106,6 @@ fn compileGLFWShared(exe: *Build.LibExeObjStep, comptime enginepath: []const u8)
     //exe.addCSourceFile("include/glfw-3.3.2/src/null_window.c", &flags);
 }
 
-fn compileFreetypeWin32(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
-    const flags = [_][]const u8{ "-O2", "-DFT2_BUILD_LIBRARY" } ++ globalflags;
-    const p = enginepath ++ "include/freetype-2.10.2/";
-    exe.addCSourceFile(p ++ "builds/windows/ftdebug.c", &flags);
-    exe.addCSourceFile(p ++ "src/base/ftsystem.c", &flags);
-}
-
-fn compileFreetypePosix(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
-    const flags = [_][]const u8{ "-O2", "-DFT2_BUILD_LIBRARY" } ++ globalflags;
-    const p = enginepath ++ "include/freetype-2.10.2/";
-    //exe.addCSourceFile(p ++ "builds/unix/ftsystem.c", &flags);
-    exe.addCSourceFile(p ++ "src/base/ftdebug.c", &flags);
-    exe.addCSourceFile(p ++ "src/base/ftsystem.c", &flags);
-}
-
-fn compileFreetypeShared(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
-    const flags = [_][]const u8{ "-O2", "-DFT2_BUILD_LIBRARY" } ++ globalflags;
-    const p = enginepath ++ "include/freetype-2.10.2/";
-    const ftpsharedsrc = comptime [_][]const u8{
-        p ++ "src/autofit/autofit.c",
-        p ++ "src/base/ftbase.c",
-        p ++ "src/base/ftbbox.c",
-        p ++ "src/base/ftbdf.c",
-        p ++ "src/base/ftbitmap.c",
-        p ++ "src/base/ftcid.c",
-        p ++ "src/base/ftfstype.c",
-        p ++ "src/base/ftgasp.c",
-        p ++ "src/base/ftglyph.c",
-        p ++ "src/base/ftgxval.c",
-        p ++ "src/base/ftinit.c",
-        p ++ "src/base/ftmm.c",
-        p ++ "src/base/ftotval.c",
-        p ++ "src/base/ftpatent.c",
-        p ++ "src/base/ftpfr.c",
-        p ++ "src/base/ftstroke.c",
-        p ++ "src/base/ftsynth.c",
-        p ++ "src/base/fttype1.c",
-        p ++ "src/base/ftwinfnt.c",
-        p ++ "src/bdf/bdf.c",
-        p ++ "src/bzip2/ftbzip2.c",
-        p ++ "src/cache/ftcache.c",
-        p ++ "src/cff/cff.c",
-        p ++ "src/cid/type1cid.c",
-        p ++ "src/gzip/ftgzip.c",
-        p ++ "src/lzw/ftlzw.c",
-        p ++ "src/pcf/pcf.c",
-        p ++ "src/pfr/pfr.c",
-        p ++ "src/psaux/psaux.c",
-        p ++ "src/pshinter/pshinter.c",
-        p ++ "src/psnames/psnames.c",
-        p ++ "src/raster/raster.c",
-        p ++ "src/sfnt/sfnt.c",
-        p ++ "src/smooth/smooth.c",
-        p ++ "src/truetype/truetype.c",
-        p ++ "src/type1/type1.c",
-        p ++ "src/type42/type42.c",
-        p ++ "src/winfonts/winfnt.c",
-    };
-
-    var i: u32 = 0;
-    while (i < ftpsharedsrc.len) : (i += 1) {
-        exe.addCSourceFile(ftpsharedsrc[i], &flags);
-    }
-}
-
 fn addSourceFiles(exe: *Build.LibExeObjStep, target: Zig.CrossTarget, comptime enginepath: []const u8) void {
     exe.linkSystemLibrary("c");
 
@@ -182,23 +117,26 @@ fn addSourceFiles(exe: *Build.LibExeObjStep, target: Zig.CrossTarget, comptime e
             exe.subsystem = Builtin.SubSystem.Console;
 
             compileGLFWWin32(exe, enginepath);
-            compileFreetypeWin32(exe, enginepath);
         },
         .linux => {
             exe.setTarget(target);
 
             compileGLFWLinux(exe, enginepath);
-            compileFreetypePosix(exe, enginepath);
         },
         else => {},
     }
 
     compileGLFWShared(exe, enginepath);
-    compileFreetypeShared(exe, enginepath);
 
     const flags = [_][]const u8{"-O3"} ++ globalflags;
     exe.addCSourceFile(enginepath ++ "include/onefile/GLAD/gl.c", &flags);
     exe.addCSourceFile(enginepath ++ "include/onefile/stb/image.c", &flags);
+    exe.addCSourceFile(enginepath ++ "include/onefile/stb/truetype.c", &flags);
+}
+
+fn addIncludeDirs(exe: *Build.LibExeObjStep, comptime enginepath: []const u8) void {
+    exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
+    exe.addIncludeDir(enginepath ++ "include/onefile/");
 }
 
 pub fn buildExe(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mode, path: []const u8, name: []const u8, lib: *Build.LibExeObjStep, comptime enginepath: []const u8) *Build.LibExeObjStep {
@@ -208,13 +146,10 @@ pub fn buildExe(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mode, path: 
 
     setup(exe, target);
 
-    exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
-    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.2/include/");
-    exe.addIncludeDir(enginepath ++ "include/onefile/");
+    addIncludeDirs(exe, enginepath);
 
     exe.addLibPath("build/");
     exe.linkSystemLibrary("kiragine");
-
     exe.addPackagePath("kiragine", enginepath ++ "src/kiragine/kiragine.zig");
 
     exe.setBuildMode(mode);
@@ -230,13 +165,10 @@ pub fn buildExePrimitive(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mod
 
     setup(exe, target);
 
-    exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
-    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.2/include/");
-    exe.addIncludeDir(enginepath ++ "include/onefile/");
+    addIncludeDirs(exe, enginepath);
 
     exe.addLibPath("build/");
     exe.linkSystemLibrary("kiragine");
-
     exe.addPackagePath("kira", enginepath ++ "src/kiragine/kira/kira.zig");
 
     exe.setBuildMode(mode);
@@ -251,10 +183,7 @@ pub fn buildEngineStatic(b: *Builder, target: Zig.CrossTarget, mode: Builtin.Mod
     exe = b.addStaticLibrary("kiragine", enginepath ++ "src/kiragine/kiragine.zig");
     exe.setOutputDir("build");
 
-    exe.addIncludeDir(enginepath ++ "include/glfw-3.3.2/include/");
-    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.2/include/");
-    exe.addIncludeDir(enginepath ++ "include/freetype-2.10.2/include/freetype/config");
-    exe.addIncludeDir(enginepath ++ "include/onefile/");
+    addIncludeDirs(exe, enginepath);
     addSourceFiles(exe, target, enginepath);
 
     exe.setBuildMode(mode);

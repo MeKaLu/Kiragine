@@ -25,7 +25,4 @@ pub usingnamespace @cImport({
     @cInclude("GLAD/gl.h");
     @cInclude("GLFW/glfw3.h");
     @cInclude("stb/image.h");
-    
-    @cInclude("ft2build.h");
-    @cInclude("freetype/freetype.h");
 });
