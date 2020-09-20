@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.0.2              |
+// |           Kiragine 1.1.0              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -62,9 +62,9 @@ pub fn abs(value: anytype) @TypeOf(value) {
     return if (value >= 0) value else -value;
 }
 /// AABB collision check
-pub fn aabb(x0: anytype, y0: anytype, w0: anytype, h0: anytype, x1: anytype, y2: anytype, w2: anytype, h2: anytype) bool {
+pub fn aabb(x0: anytype, y0: anytype, w0: anytype, h0: anytype, x1: anytype, y1: anytype, w1: anytype, h1: anytype) bool {
     return if (x0 < x1 + w1 and
         x1 < x0 + w0 and
-        y0 > y1 + h1 and
-        y1 > y0 + h0) true else false;
+        y0 < y1 + h1 and
+        y1 < y0 + h0) true else false;
 }

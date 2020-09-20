@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.0.2              |
+// |           Kiragine 1.1.0              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -79,6 +79,22 @@ pub const Rectangle = struct {
     y: f32 = 0,
     width: f32 = 0,
     height: f32 = 0,
+
+    /// Get the originated position of the rectangle
+    pub fn getOriginated(self: Rectangle) Vec2f {
+        return .{
+            .x = self.x + (self.width * 0.5),
+            .y = self.y + (self.height * 0.5),
+        };
+    }
+
+    /// Get origin of the rectangle
+    pub fn getOrigin(self: Rectangle) Vec2f {
+        return .{
+            .x = self.width * 0.5,
+            .y = self.height * 0.5,
+        };
+    }
 };
 
 /// Particle type

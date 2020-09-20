@@ -41,7 +41,10 @@ fn draw() !void {
 }
 
 pub fn main() !void {
-    try engine.init(null, null, draw, windowWidth, windowHeight, title, targetfps, std.heap.page_allocator);
+    const callbacks = engine.Callbacks{
+        .draw = draw,
+    };
+    try engine.init(callbacks, windowWidth, windowHeight, title, targetfps, std.heap.page_allocator);
 
     var file: std.fs.File = undefined;
 

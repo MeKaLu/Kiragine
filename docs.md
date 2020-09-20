@@ -121,7 +121,7 @@ pub fn destroy(self: *Texture) void
 ---
 ## Core API
 * Callbacks struct
-```
+```zig
 pub const Callbacks = struct {
     update: ?fn (deltatime: f32) anyerror!void = null,
     fixed: ?fn (fixedtime: f32) anyerror!void = null,
@@ -201,10 +201,19 @@ pub const Rectangle = struct {
     x: f32 = 0,
     y: f32 = 0,
     width: f32 = 0,
-    height: f32 = 0
+    height: f32 = 0,
+
+    // functions...
 };
 ```
-
+* Get the originated position of the rectangle
+```zig
+pub fn getOriginated(self: Rectangle) Vec2f 
+```
+* Get origin of the rectangle
+```zig
+pub fn getOrigin(self: Rectangle) Vec2f 
+```
 ---
 ##### Particle type 
 ```zig
