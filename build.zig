@@ -46,6 +46,7 @@ pub fn build(b: *Builder) void {
     }
 
     if (examples) {
+        exe = buildExe(b, target, mode, "examples/pong.zig", "pong", lib, "./");
         exe = buildExe(b, target, mode, "examples/packer.zig", "packer", lib, "./");
         exe = buildExe(b, target, mode, "examples/collision.zig", "collision", lib, "./");
         exe = buildExe(b, target, mode, "examples/simpleshooter.zig", "simpleshooter", lib, "./");
