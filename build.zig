@@ -56,7 +56,7 @@ pub fn build(b: *Builder) void {
         exe = buildExe(b, target, mode, "examples/custombatch.zig", "custombatch", lib, "./");
         exe = buildExe(b, target, mode, "examples/logging.zig", "logging", lib, "./");
 
-        exe = buildExePrimitive(b, target, mode, "examples/simpleshooteradvanced.zig", "simpleshooter-advanced", lib, "./");
+        exe = buildExePrimitive(b, target, mode, "examples/primitive-simpleshooter.zig", "primitive-simpleshooter", lib, "./");
         exe = buildExePrimitive(b, target, mode, "examples/primitive-window.zig", "primitive-window", lib, "./");
         exe = buildExePrimitive(b, target, mode, "examples/primitive-renderer.zig", "primitive-renderer", lib, "./");
         exe = buildExePrimitive(b, target, mode, "examples/primitive-triangle.zig", "primitive-triangle", lib, "./");

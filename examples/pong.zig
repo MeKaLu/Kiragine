@@ -19,12 +19,12 @@ var ballmotion = engine.Vec2f{
     .y = 1,
     .x = 0,
 };
-const ballspeed: f32 = 200;
+const ballspeed: f32 = 400;
 const ballsize = 10;
 const ballcolour = engine.Colour.rgba(240, 240, 240, 255);
 
 var paddle = engine.Rectangle{
-    .x = 1024 / 2 - 50,
+    .x = 1024 / 2 - 100,
     .y = 700,
     .width = 100,
     .height = 20,
@@ -32,8 +32,6 @@ var paddle = engine.Rectangle{
 var paddlemotion: f32 = 0;
 const paddlespeed: f32 = 300;
 const paddlecolour = engine.Colour.rgba(30, 70, 200, 255);
-
-var rand: std.rand.Xoroshiro128 = undefined;
 
 fn update(dt: f32) !void {
     const keyA: engine.Input.State = try input.keyState('A');
@@ -59,8 +57,10 @@ fn update(dt: f32) !void {
     if (aabb(paddle.x, paddle.y, paddle.width, paddle.height, ballpos.x, ballpos.y, ballsize, ballsize)) {
         ballmotion.y = -ballspeed;
 
-        const rann = rand.random.intRangeLessThan(i32, -1, 1);
-        ballmotion.x = if (rann == -1) -ballspeed else ballspeed;
+        if (ballmotion.x == 0) {
+            ballmotion.x = 1 * ballspeed;
+        }
+        ballmotion.x *= -1;
     }
 
     if (ballpos.y <= 20) {
@@ -105,14 +105,6 @@ pub fn main() !void {
     try input.bindKey('D');
 
     ballmotion.y = ballspeed;
-
-    var buf: [8]u8 = undefined;
-    try std.crypto.randomBytes(buf[0..]);
-    const seed = std.mem.readIntLittle(u64, buf[0..8]);
-    rand = std.rand.DefaultPrng.init(seed);
-
-    const rann = rand.random.intRangeLessThan(i32, -1, 1);
-    ballmotion.x = if (rann == -1) -ballspeed else ballspeed;
 
     try engine.open();
     try engine.update();
