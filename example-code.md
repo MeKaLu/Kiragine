@@ -35,7 +35,8 @@ const targetfps = 60;
 var allocator = std.heap.page_allocator;
 
 pub fn main() anyerror!void {
-  try engine.init(null, null, null, windowWidth, windowHeight, "title", targetfps, allocator);
+  const callbacks = engine.Callbacks{};
+  try engine.init(callbacks, windowWidth, windowHeight, "title", targetfps, allocator);
 
   try engine.open();
   try engine.update();
@@ -69,7 +70,12 @@ fn draw() anyerror!void {
 var allocator = std.heap.page_allocator;
 
 pub fn main() anyerror!void {
-  try engine.init(update, fixedUpdate, draw, windowWidth, windowHeight, "title", targetfps, allocator);
+  const callbacks = engine.Callbacks{
+    .update = update,
+    .fixed = fixedUpdate,
+    .draw = draw,
+  };
+  try engine.init(callbacks, windowWidth, windowHeight, "title", targetfps, allocator);
 
   try engine.open();
   try engine.update();

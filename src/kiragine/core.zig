@@ -38,10 +38,16 @@ usingnamespace @import("renderer.zig");
 
 fn pcloseCallback(handle: ?*c_void) void {
     pwinrun = false;
+    if (procs.close) |fun| {
+        fun();
+    }
 }
 
 fn presizeCallback(handle: ?*c_void, w: i32, h: i32) void {
     gl.viewport(0, 0, w, h);
+    if (procs.resize) |fun| {
+        fun(w, h);
+    }
 }
 
 fn keyboardCallback(handle: ?*c_void, key: i32, sc: i32, ac: i32, mods: i32) void {
@@ -57,6 +63,14 @@ fn mousePosCallback(handle: ?*c_void, x: f64, y: f64) void {
     pmouseY = @floatCast(f32, y);
 }
 
+pub const Callbacks = struct {
+    update: ?fn (deltatime: f32) anyerror!void = null,
+    fixed: ?fn (fixedtime: f32) anyerror!void = null,
+    draw: ?fn () anyerror!void = null,
+    resize: ?fn (w: i32, h: i32) void = null,
+    close: ?fn () void = null,
+};
+
 var pwin: *Window = undefined;
 var pwinrun = false;
 var pframetime = window.FrameTime{};
@@ -70,15 +84,12 @@ var ptargetfps: f64 = 0.0;
 // error: inferring error set of return type valid only for function definitions
 // var pupdateproc: ?fn (deltatime: f32) !void = null;
 //                                       ^
-
-var pupdateproc: ?fn (deltatime: f32) anyerror!void = null;
-var pfixedupdateproc: ?fn (fixedtime: f32) anyerror!void = null;
-var pdraw2dproc: ?fn () anyerror!void = null;
+var procs = Callbacks{};
 
 var allocator: *std.mem.Allocator = undefined;
 
 /// Initializes the engine
-pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fixedtime: f32) anyerror!void, draw2dfn: ?fn () anyerror!void, width: i32, height: i32, title: []const u8, fpslimit: u32, alloc: *std.mem.Allocator) !void {
+pub fn init(callbacks: Callbacks, width: i32, height: i32, title: []const u8, fpslimit: u32, alloc: *std.mem.Allocator) !void {
     if (pengineready) return Error.EngineIsInitialized;
 
     allocator = alloc;
@@ -124,9 +135,7 @@ pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fi
 
     try initRenderer(allocator, pwin);
 
-    pupdateproc = updatefn;
-    pfixedupdateproc = fixedupdatefn;
-    pdraw2dproc = draw2dfn;
+    setCallbacks(callbacks);
     ptargetfps = 0;
     pengineready = true;
 
@@ -179,18 +188,18 @@ pub fn update() !void {
         last = pframetime.current;
         accumulator += ftime;
 
-        if (pupdateproc) |fun| {
+        if (procs.update) |fun| {
             try fun(@floatCast(f32, pframetime.delta));
         }
 
-        if (pfixedupdateproc) |fun| {
+        if (procs.fixed) |fun| {
             while (accumulator >= dt) : (accumulator -= dt) {
                 try fun(@floatCast(f32, dt));
             }
         }
         pinput.handle();
 
-        if (pdraw2dproc) |fun| {
+        if (procs.draw) |fun| {
             try fun();
         }
 
@@ -227,4 +236,9 @@ pub fn getMouseX() f32 {
 /// Returns the mouse pos y
 pub fn getMouseY() f32 {
     return pmouseY;
+}
+
+/// Sets the callbacks
+pub fn setCallbacks(calls: Callbacks) void {
+    procs = calls;
 }

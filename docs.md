@@ -120,20 +120,20 @@ pub fn destroy(self: *Texture) void
 ```
 ---
 ## Core API
-* Initializes the engine. Respectively:
-
---> Update/FixedUpdate/Draw function,
-
--->  Window width/height and title,
-
---> Target(Maximum) fps if sets the 0 vsync will be enabled otherwise it's disabled,
-
---> Allocator for allocating memories.
-
+* Callbacks struct
+```
+pub const Callbacks = struct {
+    update: ?fn (deltatime: f32) anyerror!void = null,
+    fixed: ?fn (fixedtime: f32) anyerror!void = null,
+    draw: ?fn () anyerror!void = null,
+    resize: ?fn (w: i32, h: i32) void = null,
+    close: ?fn () void = null,
+};
+```
+* Initializes the engine
 ```zig
-pub fn init(updatefn: ?fn (deltatime: f32) anyerror!void, fixedupdatefn: ?fn (fixedtime: f32) anyerror!void, draw2dfn: ?fn () anyerror!void, width: i32, height: i32, title: []const  u8, fpslimit: u32, alloc: *std.mem.Allocator) !void
-````
-
+pub fn init(callbacks: Callbacks, width: i32, height: i32, title: []const  u8, fpslimit: u32, alloc: *std.mem.Allocator) !void
+```
 * Deinitializes the engine
 ```zig
 pub fn deinit() Error!void
@@ -170,6 +170,10 @@ pub fn getMouseX() f32
  ```zig
 pub fn getMouseY() f32
 ```
+* Sets the callbacks
+```zig
+pub fn setCallbacks(calls: Callbacks) void
+``` 
 ---
 
 ## Renderer API

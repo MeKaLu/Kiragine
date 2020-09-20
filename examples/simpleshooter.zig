@@ -165,7 +165,12 @@ fn draw() !void {
 }
 
 pub fn main() !void {
-    try engine.init(update, fixedUpdate, draw, windowWidth, windowHeight, "simple shooter", 75, std.heap.page_allocator);
+    const callbacks = engine.Callbacks{
+        .draw = draw,
+        .update = update,
+        .fixed = fixedUpdate,
+    };
+    try engine.init(callbacks, windowWidth, windowHeight, "simpleshooter", 0, std.heap.page_allocator);
 
     input = engine.getInput();
     try input.bindKey('D');

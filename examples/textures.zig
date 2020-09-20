@@ -35,7 +35,10 @@ fn draw() !void {
 }
 
 pub fn main() !void {
-    try engine.init(null, null, draw, windowWidth, windowHeight, title, targetfps, std.heap.page_allocator);
+    const callbacks = engine.Callbacks{
+        .draw = draw,
+    };
+    try engine.init(callbacks, windowWidth, windowHeight, title, targetfps, std.heap.page_allocator);
 
     const t = @embedFile("../assets/test.png");
     texture = try engine.Texture.createFromPNGMemory(t);

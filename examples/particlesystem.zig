@@ -71,7 +71,11 @@ fn draw() !void {
 }
 
 pub fn main() !void {
-    try engine.init(null, fixedUpdate, draw, windowWidth, windowHeight, title, targetfps, std.heap.page_allocator);
+    const callbacks = engine.Callbacks{
+        .draw = draw,
+        .fixed = fixedUpdate,
+    };
+    try engine.init(callbacks, windowWidth, windowHeight, title, targetfps, std.heap.page_allocator);
 
     var buf: [8]u8 = undefined;
     try std.crypto.randomBytes(buf[0..]);
