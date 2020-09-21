@@ -2,12 +2,9 @@ const std = @import("std");
 const engine = @import("kiragine");
 usingnamespace engine.kira.log;
 
-const gl = engine.kira.gl;
-const c = engine.kira.c;
-
 const windowWidth = 1024;
 const windowHeight = 768;
-const title = "Textures";
+const title = "Packer";
 const targetfps = 60;
 
 var texture: engine.Texture = undefined;
@@ -18,10 +15,6 @@ const srcrect: engine.Rectangle = .{ .x = 0, .y = 0, .width = 32, .height = 32 }
 
 fn draw() !void {
     engine.clearScreen(0.1, 0.1, 0.1, 1.0);
-
-    //const texture = engine.Texture{
-    //.id = atlas.textureid,
-    //};
 
     // Enable the texture batch with given texture
     engine.enableTextureBatch2D(texture);

@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.1.0              |
+// |           Kiragine 1.1.1              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -24,6 +24,8 @@
 pub usingnamespace @import("sharedtypes.zig");
 pub usingnamespace @import("core.zig");
 pub usingnamespace @import("renderer.zig");
+
+pub const ecs = @import("ecs.zig");
 
 pub const kira = @import("kira/kira.zig");
 

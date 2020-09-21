@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.1.0              |
+// |           Kiragine 1.1.1              |
 // -----------------------------------------
 // Copyright © 2020-1020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied

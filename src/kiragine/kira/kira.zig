@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.1.0              |
+// |           Kiragine 1.1.1              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -30,5 +30,4 @@ pub const window = @import("window.zig");
 pub const renderer = @import("renderer.zig");
 
 pub const math = @import("math/math.zig");
-
 pub const log = @import("log.zig");

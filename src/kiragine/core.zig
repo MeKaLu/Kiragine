@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.1.0              |
+// |           Kiragine 1.1.1              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -136,7 +136,7 @@ pub fn init(callbacks: Callbacks, width: i32, height: i32, title: []const u8, fp
     try initRenderer(allocator, pwin);
 
     setCallbacks(callbacks);
-    ptargetfps = 0;
+    ptargetfps = 1.0 / @intToFloat(f32, fpslimit);
     pengineready = true;
 
     std.log.info("kiragine -> initialized! Size -> width:{} & height:{} ; Title:{}", .{ pwin.size.width, pwin.size.height, pwin.title });

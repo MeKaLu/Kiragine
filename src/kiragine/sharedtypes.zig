@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.1.0              |
+// |           Kiragine 1.1.1              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -97,6 +97,16 @@ const pError = error{
     /// Submit fn is not initialized
     /// and you are trying to execute it
     UnknownSubmitFn,
+
+    // Ecs errors
+
+    /// 'thing' already exists in the other 'thing'
+    /// Cannot add one more time
+    Duplicate,
+    /// Unknown 'thing', corrupted or invalid
+    Unknown,
+    /// Failed to add 'thing'
+    FailedToAdd,
 };
 
 /// Error set

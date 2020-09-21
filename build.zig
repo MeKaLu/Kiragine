@@ -1,5 +1,5 @@
 // -----------------------------------------
-// |           Kiragine 1.1.0              |
+// |           Kiragine 1.1.1              |
 // -----------------------------------------
 // Copyright © 2020-2020 Mehmet Kaan Uluç <kaanuluc@protonmail.com>
 // This software is provided 'as-is', without any express or implied
@@ -43,9 +43,11 @@ pub fn build(b: *Builder) void {
 
     if (tests) {
         exe = buildExe(b, target, mode, "src/tests/atlaspacker.zig", "test-atlaspacker", lib, "./");
+        exe = buildExe(b, target, mode, "src/tests/ecs.zig", "test-ecs", lib, "./");
     }
 
     if (examples) {
+        //exe = buildExe(b, target, mode, "examples/ecs.zig", "ecs", lib, "./");
         exe = buildExe(b, target, mode, "examples/pong.zig", "pong", lib, "./");
         exe = buildExe(b, target, mode, "examples/packer.zig", "packer", lib, "./");
         exe = buildExe(b, target, mode, "examples/collision.zig", "collision", lib, "./");
