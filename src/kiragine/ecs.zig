@@ -23,134 +23,188 @@
 
 const std = @import("std");
 
-usingnamespace @import("sharedtypes.zig");
-usingnamespace @import("kira/log.zig");
+const UniqueList = @import("kira/utils.zig").UniqueList;
+const Error = @import("sharedtypes.zig").Error;
 
-pub const invalid = 0;
-
-pub fn EntityGeneric(comptime complisttype: type, maxtags: u64) type {
+pub fn EntityGeneric(comptime complisttype: type) type {
     return struct {
         const Self = @This();
         pub const ComponentList = complisttype;
-        pub const max_tags = maxtags;
-        id: u64 = invalid,
+        id: u64 = undefined,
 
         components: ComponentList = undefined,
-        tags: [max_tags]u64 = undefined,
+        tags: UniqueList(u64) = undefined,
 
+        /// Initializes the entity
+        pub fn init(self: *Self, alloc: *std.mem.Allocator) !void {
+            self.tags = try UniqueList(u64).init(alloc, 10);
+        }
+
+        /// Deinitializes the entity
+        pub fn deinit(self: *Self) void {
+            self.tags.deinit();
+        }
+
+        /// Clears the tags within the entity
         pub fn clearTags(self: *Self) void {
-            var i: u64 = 0;
-            while (i < max_tags) : (i += 1) {
-                self.tags[i] = invalid;
-            }
+            self.tags.clear();
         }
 
-        pub fn has(self: Self, tag: u64) bool {
-            var i: u64 = 0;
-            while (i < max_tags) : (i += 1) {
-                if (self.tags[i] == tag) return true;
-            }
-            return false;
+        /// Requires the specific component
+        pub fn requireFilter(self: *Self, tag: u64) bool {
+            return self.tags.isExists(tag);
         }
 
-        pub fn hasThem(self: Self, tags: [max_tags]u64) bool {
+        /// Requires filters
+        pub fn requireFilters(self: *Self, comptime max: u64, tags: [max]u64) bool {
             var i: u64 = 0;
-            var yes = true;
-
-            while (i < max_tags) : (i += 1) {
-                if (!self.has(tags[i])) {
-                    yes = false;
-                    break;
-                }
+            while (i < max) : (i += 1) {
+                if (!self.tags.isExists(tags[i])) return false;
             }
-            return yes;
+            return true;
         }
 
-        pub fn addComponentPtr(self: *Self, comptime comptype: type, comptime compname: []const u8, component: *comptype, tag: u64) Error!void {
+        /// Adds a component to the entity
+        pub fn addComponent(self: *Self, comptime comptype: type, comptime compname: []const u8, component: comptype, tag: u64) !void {
             comptime {
                 if (!@hasField(ComponentList, compname)) @compileError("Unknown component type " ++ compname ++ "!");
             }
-            if (self.has(tag)) return Error.Duplicate;
-            var i: u64 = 0;
-            while (i < max_tags) : (i += 1) {
-                if (self.tags[i] == invalid) {
-                    self.tags[i] = tag;
-                    @field(self.components, compname) = component;
-                    return;
-                }
-            }
-            return Error.FailedToAdd;
+
+            try self.tags.insert(tag, true);
+            @field(self.components, compname) = component;
         }
 
-        pub fn addComponent(self: *Self, comptime comptype: type, comptime compname: []const u8, component: comptype, tag: u64) Error!void {
+        /// Removes a component to the entity
+        pub fn removeComponent(self: *Self, tag: u64) Error!void {
+            try self.tags.remove(tag);
+        }
+
+        /// Gets a component to the entity
+        pub fn getComponent(self: Self, comptime comptype: type, comptime compname: []const u8, tag: u64) Error!comptype {
             comptime {
                 if (!@hasField(ComponentList, compname)) @compileError("Unknown component type " ++ compname ++ "!");
             }
-            if (self.has(tag)) return Error.Duplicate;
-            var i: u64 = 0;
-            while (i < max_tags) : (i += 1) {
-                if (self.tags[i] == invalid) {
-                    self.tags[i] = tag;
-                    @field(self.components, compname) = component;
-                    return;
-                }
+
+            if (!self.tags.isExists(tag)) return Error.Unknown;
+            return @field(self.components, compname);
+        }
+
+        /// Replaces a component
+        pub fn replaceComponent(self: *Self, comptime comptype: type, comptime compname: []const u8, component: comptype, tag: u64) !void {
+            comptime {
+                if (!@hasField(ComponentList, compname)) @compileError("Unknown component type " ++ compname ++ "!");
             }
-            return Error.FailedToAdd;
+            if (!self.tags.isExists(tag)) return Error.Unknown;
+            @field(self.components, compname) = component;
         }
     };
 }
 
-pub fn SystemGeneric(maxentity: u64, comptime entitytype: type) type {
+pub fn SystemGeneric(comptime entitytype: type) type {
     return struct {
         const Self = @This();
-        pub const max_entity = maxentity;
         pub const Entity = entitytype;
 
-        filtered_list: [max_entity]*Entity = undefined,
-        filtered_count: u64 = 0,
+        filtered_list: UniqueList(*Entity) = undefined,
+        filter_tags: UniqueList(u64) = undefined,
+        entites: UniqueList(*Entity) = undefined,
 
-        entites: [max_entity]Entity = undefined,
-
-        proc: ?fn (self: *Self) anyerror!void = null,
-
-        fn pushToTheFiltered(self: *Self, ent: *Entity) void {
-            self.filtered_list[self.filtered_count] = ent;
-            self.filtered_count += 1;
+        /// Initializes the system
+        pub fn init(self: *Self, alloc: *std.mem.Allocator) !void {
+            self.filter_tags = try UniqueList(u64).init(alloc, 10);
+            self.filtered_list = try UniqueList(*Entity).init(alloc, 10);
+            self.entites = try UniqueList(*Entity).init(alloc, 10);
         }
 
-        pub fn hasEntity(self: *Self, id: u64) bool {
-            var i: u64 = 0;
-            while (i < Self.max_entity) : (i += 1) {
-                if (self.entites[i].id == id) {
-                    return true;
-                }
-            }
-            return false;
+        /// Deinitializes the system
+        pub fn deinit(self: *Self) void {
+            self.entites.deinit();
+            self.filtered_list.deinit();
+            self.filter_tags.deinit();
         }
 
-        pub fn filter(self: *Self, tags: [Entity.max_tags]u64) Error!void {
-            var i: u64 = 0;
-            while (i < Self.max_entity) : (i += 1) {
-                if (self.entites[i].id == invalid) continue;
-
-                if (self.entites[i].hasThem(tags)) {
-                    self.pushToTheFiltered(&self.entites[i]);
-                }
-            }
-        }
-
+        /// Clears the filters
         pub fn clearFilter(self: *Self) void {
-            self.filtered_count = 0;
-            self.filtered_list = undefined;
+            self.filter_tags.clear();
+            self.filtered_list.clear();
         }
 
-        pub fn addEntity(self: *Self, ent: Entity) Error!void {
-            if (self.hasEntity(ent.id)) return Error.Duplicate;
+        /// Clears the entites
+        pub fn clearEntites(self: *Self) void {
+            self.entites.clear();
+        }
+
+        /// Is entity filtered?
+        pub fn hasFiltered(self: Self, ent: Entity) bool {
+            return self.filtered_list.isExists(ent);
+        }
+
+        /// Is entity exists?
+        pub fn hasEntity(self: Self, ent: Entity) bool {
+            return self.entites.isExists(ent);
+        }
+
+        /// Adds a filter
+        pub fn addFilter(self: *Self, tag: u64) !void {
+            try self.filter_tags.insert(tag, true);
+        }
+
+        /// Adds filters
+        pub fn addFilters(self: *Self, comptime max: u64, tags: [max]u64) !void {
             var i: u64 = 0;
-            while (i < Self.max_entity) : (i += 1) {
-                if (self.entites[i].id == invalid) {
-                    self.entites[i] = ent;
-                    return;
+            while (i < max) : (i += 1) {
+                try self.filter_tags.insert(tags[i], true);
+            }
+        }
+
+        /// Require a filter
+        pub fn requireFilter(self: *Self, tag: u64) bool {
+            if (!self.filter_tags.isExists(tag)) return false;
+            return true;
+        }
+
+        /// Requires filters
+        pub fn requireFilters(self: *Self, comptime max: u64, tags: [max]u64) bool {
+            var i: u64 = 0;
+            while (i < max) : (i += 1) {
+                if (!self.filter_tags.isExists(tags[i])) return false;
+            }
+            return true;
+        }
+
+        /// Updates the filters, gets the entities with requires specific filters
+        pub fn updateFilters(self: *Self, comptime max: u64) !void {
+            var i: u64 = 0;
+            while (i < self.entites.count) : (i += 1) {
+                if (self.entites.items[i].is_exists) {
+                    // A dirty hack
+                    var ent = self.entites.items[i].data;
+                    const ar = ent.tags.convertToArray(u64, max);
+                    const res = ent.requireFilters(max, ar);
+                    if (res) {
+                        try self.filtered_list.insert(ent, true);
+                    }
+                }
+            }
+            if (self.filtered_list.count == 0) return Error.FailedToAdd;
+        }
+
+        /// Add an entity
+        pub fn addEntity(self: *Self, ent: *Entity) !void {
+            try self.entites.insert(ent, true);
+        }
+
+        /// Remove the entity
+        pub fn removeEntity(self: *Self, ent: *Entity) Error!void {
+            try self.entites.remove(ent);
+        }
+
+        /// Get an entity ptr
+        pub fn getEntity(self: Self, id: u64) Error!*Entity {
+            var i: u64 = 0;
+            while (i < self.entites.count) : (i += 1) {
+                if (self.entites.items[i].is_exists and self.entites.items[i].data.id == id) {
+                    return self.entites.items[i].data;
                 }
             }
             return Error.Unknown;

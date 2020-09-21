@@ -98,7 +98,7 @@ const pError = error{
     /// and you are trying to execute it
     UnknownSubmitFn,
 
-    // Ecs errors
+    //From utils.Error
 
     /// 'thing' already exists in the other 'thing'
     /// Cannot add one more time

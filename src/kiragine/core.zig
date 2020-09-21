@@ -136,7 +136,7 @@ pub fn init(callbacks: Callbacks, width: i32, height: i32, title: []const u8, fp
     try initRenderer(allocator, pwin);
 
     setCallbacks(callbacks);
-    ptargetfps = 1.0 / @intToFloat(f32, fpslimit);
+    if (fpslimit != 0) ptargetfps = 1.0 / @intToFloat(f32, fpslimit);
     pengineready = true;
 
     std.log.info("kiragine -> initialized! Size -> width:{} & height:{} ; Title:{}", .{ pwin.size.width, pwin.size.height, pwin.title });

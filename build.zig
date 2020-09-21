@@ -43,11 +43,11 @@ pub fn build(b: *Builder) void {
 
     if (tests) {
         exe = buildExe(b, target, mode, "src/tests/atlaspacker.zig", "test-atlaspacker", lib, "./");
-        exe = buildExe(b, target, mode, "src/tests/ecs.zig", "test-ecs", lib, "./");
+        exe = buildExe(b, target, mode, "src/tests/list.zig", "test-list", lib, "./");
     }
 
     if (examples) {
-        //exe = buildExe(b, target, mode, "examples/ecs.zig", "ecs", lib, "./");
+        exe = buildExe(b, target, mode, "examples/ecs.zig", "ecs", lib, "./");
         exe = buildExe(b, target, mode, "examples/pong.zig", "pong", lib, "./");
         exe = buildExe(b, target, mode, "examples/packer.zig", "packer", lib, "./");
         exe = buildExe(b, target, mode, "examples/collision.zig", "collision", lib, "./");

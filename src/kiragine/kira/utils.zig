@@ -22,7 +22,7 @@
 //    distribution.
 
 /// Error set
-pub const Error = error{CheckFailed};
+pub const Error = error{ CheckFailed, Unknown, Duplicate, FailedToAdd };
 const std = @import("std");
 const gl = @import("gl.zig");
 usingnamespace @import("log.zig");
@@ -93,3 +93,148 @@ pub const DataPacker = struct {
         self.allocatedsize = self.allocatedsize + size;
     }
 };
+
+pub fn UniqueList(comptime T: type) type {
+    return struct {
+        const Self = @This();
+        pub const typ = T;
+
+        pub const Item = struct {
+            data: typ = undefined,
+            is_exists: bool = false,
+        };
+
+        allocator: *std.mem.Allocator = undefined,
+        items: []Item = undefined,
+
+        count: u64 = 0,
+        total_capacity: u64 = 1,
+
+        /// Allocates the memory
+        pub fn init(alloc: *std.mem.Allocator, reserve: u64) !Self {
+            var self = Self{
+                .allocator = alloc,
+                .items = undefined,
+                .total_capacity = 1 + reserve,
+                .count = 0,
+            };
+            self.items = try self.allocator.alloc(Item, self.total_capacity);
+            self.clear();
+            return self;
+        }
+
+        /// Frees the memory once
+        pub fn deinit(self: *Self) void {
+            self.allocator.free(self.items);
+        }
+
+        /// Clears the list
+        pub fn clear(self: *Self) void {
+            var i: u64 = 0;
+            while (i < self.total_capacity) : (i += 1) {
+                self.items[i].is_exists = false;
+                self.items[i].data = undefined;
+            }
+            self.count = 0;
+        }
+
+        /// Increases the capacity
+        pub fn increaseCapacity(self: *Self, reserve: u64) !void {
+            var buf = self.items;
+            self.items = try self.allocator.alloc(Item, self.total_capacity + reserve);
+            var i: u64 = 0;
+            while (i < self.total_capacity) : (i += 1) {
+                self.items[i] = buf[i];
+            }
+            self.allocator.free(buf);
+
+            self.total_capacity += reserve;
+            while (i < self.total_capacity) : (i += 1) {
+                self.items[i].is_exists = false;
+                self.items[i].data = undefined;
+            }
+        }
+
+        /// It cannot decrease a used space,
+        /// call it after calling the 'clear' function
+        pub fn decreaseCapacity(self: *Self, reserve: u64) !void {
+            if (self.total_capacity - reserve <= self.count) return;
+            var buf = self.items;
+            self.items = try self.allocator.alloc(Item, self.total_capacity - reserve);
+            var i: u64 = self.total_capacity;
+            while (i >= 0) : (i -= 1) {
+                self.items[i] = buf[i];
+            }
+            self.allocator.free(buf);
+            self.total_capacity -= reserve;
+        }
+
+        /// Insert an item, it fails if the item was a duplicate
+        pub fn insert(self: *Self, item: typ, autoincrease: bool) !void {
+            var i: u64 = 0;
+            while (i < self.total_capacity) : (i += 1) {
+                if (self.items[i].is_exists and self.items[i].data == item) {
+                    return Error.Duplicate;
+                } else if (!self.items[i].is_exists) {
+                    self.items[i].data = item;
+                    self.items[i].is_exists = true;
+                    self.count += 1;
+                    return;
+                }
+            }
+            if (autoincrease) {
+                try self.increaseCapacity(1);
+                return self.insert(item, false);
+            }
+
+            return Error.FailedToAdd;
+        }
+
+        /// Remove an item
+        pub fn remove(self: *Self, item: typ) Error!void {
+            var i: u64 = 0;
+            while (i < self.total_capacity) : (i += 1) {
+                if (self.items[i].is_exists and self.items[i].data == item) {
+                    self.items[i].is_exists = false;
+                    self.items[i].data = undefined;
+                    return;
+                }
+            }
+            return Error.Unknown;
+        }
+
+        /// Get an item index
+        pub fn getIndex(self: Self, item: typ) Error!u64 {
+            var i: u64 = 0;
+            while (i < self.total_capacity) : (i += 1) {
+                if (self.items[i].is_exists and self.items[i].data == item) {
+                    return i;
+                }
+            }
+            return Error.Unknown;
+        }
+
+        /// Does the data exists?
+        pub fn isExists(self: Self, item: typ) bool {
+            var i: u64 = 0;
+            while (i < self.total_capacity) : (i += 1) {
+                if (self.items[i].is_exists and self.items[i].data == item) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// Turn the existing data into array
+        pub fn convertToArray(self: Self, comptime tp: type, comptime len: u64) [len]tp {
+            var result: [len]typ = undefined;
+            var i: u64 = 0;
+            while (i < self.total_capacity) : (i += 1) {
+                if (self.items[i].is_exists) {
+                    result[i] = self.items[i].data;
+                }
+            }
+            return result;
+        }
+    };
+}
