@@ -23,8 +23,56 @@
 
 const std = @import("std");
 
+const math = @import("kira/math/common.zig");
+
 const UniqueList = @import("kira/utils.zig").UniqueList;
-const Error = @import("sharedtypes.zig").Error;
+usingnamespace @import("sharedtypes.zig");
+
+const drawRectangleRotated = @import("renderer.zig").drawRectangleRotated;
+const Rectangle = @import("renderer.zig").Rectangle;
+
+const hash = std.hash.Wyhash.hash;
+
+pub fn Components(seed: u64, comptime prefix: []const u8) type {
+    return struct {
+        pub const Transform = struct {
+            pub const tag = hash(seed, prefix ++ "TransformComponent");
+            position: Vec2f = undefined,
+            size: Vec2f = undefined,
+            origin: Vec2f = undefined,
+            colour: Colour = undefined,
+            /// In degrees
+            rotation: f32 = 0,
+        };
+        pub const Alive = struct {
+            pub const tag = hash(seed, prefix ++ "AliveComponent");
+            is_it: bool = false,
+        };
+
+        transform: Transform = undefined,
+        is_alive: Alive = undefined,
+    };
+}
+
+pub const Logics = struct {
+    /// Draws a rectangle, requires Transform and Alive
+    pub fn drawRectangle(comptime systype: type, self: *systype, comptime transform: type, comptime alive: type) Error!void {
+        var i: u64 = 0;
+        while (i < self.filtered_list.count) : (i += 1) {
+            if (!self.filtered_list.items[i].is_exists) continue;
+            const ent = self.filtered_list.items[i].data;
+
+            const is_alive = try ent.getComponent(alive, "is_alive", alive.tag);
+            if (is_alive.is_it) {
+                const tr = try ent.getComponent(transform, "transform", transform.tag);
+                const colour = tr.colour;
+                const rot = math.deg2radf(tr.rotation);
+                const rect = Rectangle{ .x = tr.position.x, .y = tr.position.y, .width = tr.size.x, .height = tr.size.y };
+                try drawRectangleRotated(rect, tr.origin, rot, colour);
+            }
+        }
+    }
+};
 
 pub fn EntityGeneric(comptime complisttype: type) type {
     return struct {
@@ -113,7 +161,7 @@ pub fn SystemGeneric(comptime entitytype: type) type {
         pub fn init(self: *Self, alloc: *std.mem.Allocator) !void {
             self.filter_tags = try UniqueList(u64).init(alloc, 10);
             self.filtered_list = try UniqueList(*Entity).init(alloc, 10);
-            self.entites = try UniqueList(*Entity).init(alloc, 10);
+            self.entites = try UniqueList(*Entity).init(alloc, 100);
         }
 
         /// Deinitializes the system

@@ -101,7 +101,6 @@ const movementSystemTag = [_]u64{
     hash(seed, "IsAliveComponent"),
 };
 
-var input: *engine.Input = undefined;
 var alloc = std.heap.page_allocator;
 var system: System = undefined;
 
@@ -113,8 +112,6 @@ pub fn main() !void {
     try engine.init(callbacks, 1024, 768, "ECS", 0, alloc);
 
     engine.kira.glfw.vsync(false);
-    input = engine.getInput();
-    try input.bindKey('A');
 
     try system.init(alloc);
     defer system.deinit();
