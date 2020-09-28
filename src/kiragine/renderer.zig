@@ -287,61 +287,11 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
     };
 }
 
-const pnotexture_vertex_shader =
-    \\#version 330 core
-    \\layout (location = 0) in vec2 aPos;
-    \\layout (location = 1) in vec4 aColour;
-    \\
-    \\out vec4 ourColour;
-    \\uniform mat4 MVP;
-    \\
-    \\void main() {
-    \\  gl_Position = MVP * vec4(aPos.xy, 0.0, 1.0);
-    \\  ourColour = aColour;
-    \\}
-;
+const pnotexture_vertex_shader = @embedFile("../../assets/shaders/notexture.vert");
+const pnotexture_fragment_shader = @embedFile("../../assets/shaders/notexture.frag");
 
-const pnotexture_fragment_shader =
-    \\#version 330 core
-    \\
-    \\out vec4 final;
-    \\in vec4 ourColour;
-    \\
-    \\void main() {
-    \\  final = ourColour;
-    \\}
-;
-
-const ptexture_vertex_shader =
-    \\#version 330 core
-    \\layout (location = 0) in vec2 aPos;
-    \\layout (location = 1) in vec2 aTexCoord;
-    \\layout (location = 2) in vec4 aColour;
-    \\
-    \\out vec2 ourTexCoord;
-    \\out vec4 ourColour;
-    \\uniform mat4 MVP;
-    \\
-    \\void main() {
-    \\  gl_Position = MVP * vec4(aPos.xy, 0.0, 1.0);
-    \\  ourTexCoord = aTexCoord;
-    \\  ourColour = aColour;
-    \\}
-;
-
-const ptexture_fragment_shader =
-    \\#version 330 core
-    \\
-    \\out vec4 final;
-    \\in vec2 ourTexCoord;
-    \\in vec4 ourColour;
-    \\uniform sampler2D uTexture;
-    \\
-    \\void main() {
-    \\  vec4 texelColour = texture(uTexture, ourTexCoord);
-    \\  final = ourColour * texelColour;
-    \\}
-;
+const ptexture_vertex_shader = @embedFile("../../assets/shaders/texture.vert");
+const ptexture_fragment_shader = @embedFile("../../assets/shaders/texture.frag");
 
 var prenderer2D: *Renderer2D = undefined;
 var allocator: *std.mem.Allocator = undefined;

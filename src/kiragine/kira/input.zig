@@ -183,6 +183,14 @@ pub const Info = struct {
         return Error.InvalidBinding;
     }
 
+    /// Returns a value based on the given states
+    pub fn getValue(comptime rtype: type, left: State, right: State) rtype {
+        var r: rtype = undefined;
+        if (left == .down) r -= 1;
+        if (right == .down) r += 1;
+        return r; 
+    } 
+
     /// Handles the inputs
     /// Warning: Call just before polling/processing the events
     /// Keep in mind binding states will be useless after polling events
