@@ -74,29 +74,6 @@ pub const Renderer2DBatchTag = enum {
     quads,
 };
 
-pub const Rectangle = struct {
-    x: f32 = 0,
-    y: f32 = 0,
-    width: f32 = 0,
-    height: f32 = 0,
-
-    /// Get the originated position of the rectangle
-    pub fn getOriginated(self: Rectangle) Vec2f {
-        return .{
-            .x = self.x + (self.width * 0.5),
-            .y = self.y + (self.height * 0.5),
-        };
-    }
-
-    /// Get origin of the rectangle
-    pub fn getOrigin(self: Rectangle) Vec2f {
-        return .{
-            .x = self.width * 0.5,
-            .y = self.height * 0.5,
-        };
-    }
-};
-
 /// Particle type
 pub const Particle = struct {
     /// Particle position

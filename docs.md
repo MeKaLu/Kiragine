@@ -92,6 +92,26 @@ pub fn rotate(self: *ModelMatrix, x: f32, y: f32, z: f32, angle: f32) void
 pub fn scale(self: *ModelMatrix, x: f32, y: f32, z: f32) void
 ```
 ---
+##### Rectangle type 
+```zig
+pub const Rectangle = struct {
+    x: f32 = 0,
+    y: f32 = 0,
+    width: f32 = 0,
+    height: f32 = 0,
+
+    // functions...
+};
+```
+* Get the originated position of the rectangle
+```zig
+pub fn getOriginated(self: Rectangle) Vec2f 
+```
+* Get origin of the rectangle
+```zig
+pub fn getOrigin(self: Rectangle) Vec2f 
+```
+---
 ### Texture loading/generating
 *  Texture type
 ```zig
@@ -118,6 +138,8 @@ pub fn createFromColour(colour: [*]UColour, w: i32, h: i32) Texture
 ```zig
 pub fn destroy(self: *Texture) void
 ```
+---
+* TODO: FlipBook
 ---
 ## Core API
 * Callbacks struct
@@ -194,26 +216,6 @@ pub fn setCallbacks(calls: Callbacks) void
 
 --> `quads`
 
----
-##### Rectangle type 
-```zig
-pub const Rectangle = struct {
-    x: f32 = 0,
-    y: f32 = 0,
-    width: f32 = 0,
-    height: f32 = 0,
-
-    // functions...
-};
-```
-* Get the originated position of the rectangle
-```zig
-pub fn getOriginated(self: Rectangle) Vec2f 
-```
-* Get origin of the rectangle
-```zig
-pub fn getOrigin(self: Rectangle) Vec2f 
-```
 ---
 ##### Particle type 
 ```zig

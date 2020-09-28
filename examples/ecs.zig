@@ -63,6 +63,8 @@ pub fn main() !void {
 fn fupdate(fdt: f32) !void {
     if (world.hasFilters(3, [3]u64{@enumToInt(ComponentTags.isAlive), @enumToInt(ComponentTags.motion), @enumToInt(ComponentTags.rectangle)}))
         try systemMotion(&world, fdt);
+
+    std.log.emerg("fps: {}", .{engine.getFps()});
 }
 
 fn draw() !void {

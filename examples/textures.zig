@@ -8,7 +8,6 @@ const title = "Textures";
 const targetfps = 60;
 
 var texture: engine.Texture = undefined;
-var textureGenerated: engine.Texture = undefined;
 
 const rect: engine.Rectangle = .{ .x = 500, .y = 380, .width = 32 * 3, .height = 32 * 3 };
 const rect2: engine.Rectangle = .{ .x = 300, .y = 400, .width = 32 * 6, .height = 32 * 6 };

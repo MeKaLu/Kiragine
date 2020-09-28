@@ -143,6 +143,30 @@ pub const ModelMatrix = struct {
     }
 };
 
+pub const Rectangle = struct {
+    x: f32 = 0,
+    y: f32 = 0,
+    width: f32 = 0,
+    height: f32 = 0,
+
+    /// Get the originated position of the rectangle
+    pub fn getOriginated(self: Rectangle) Vec2f {
+        return .{
+            .x = self.x + (self.width * 0.5),
+            .y = self.y + (self.height * 0.5),
+        };
+    }
+
+    /// Get origin of the rectangle
+    pub fn getOrigin(self: Rectangle) Vec2f {
+        return .{
+            .x = self.width * 0.5,
+            .y = self.height * 0.5,
+        };
+    }
+};
+
+
 pub const Texture = struct {
     id: u32 = 0,
     width: i32 = 0,
@@ -217,5 +241,79 @@ pub const Texture = struct {
     pub fn destroy(self: *Texture) void {
         gl.texturesDelete(1, @ptrCast([*]const u32, &self.id));
         self.id = 0;
+    }
+};
+
+/// Flipbook
+pub const FlipBook = struct {
+    pub const Properties = struct {
+        frame_size: Vec2f = .{},
+        max_frame_size: Vec2f = .{},
+        frame_increase_size: Vec2f = .{},
+
+        fps: u32 = 0,
+        current_frame: u32 = 0,
+        is_infinite: bool = true,
+        is_finished: bool = false,
+        play: bool = true,
+    };
+
+    properties: Properties = Properties{},
+    srcrect: *Rectangle = undefined,
+    timer: f32 = 0,
+
+    /// Creates animated texture
+    pub fn create(self: *FlipBook) void {
+        self.timer = 1.0 / @intToFloat(f32, self.properties.fps);
+    }
+
+    /// Update animation
+    pub fn update(self: *FlipBook, dt: f32) void {
+        if (!self.properties.play) return;
+        if (self.timer > 0.0) {
+            self.timer -= 1 * dt;
+            return;
+        } 
+        self.timer = 1.0 / @intToFloat(f32, self.properties.fps);
+        self.properties.current_frame += 1;
+        if (self.srcrect.x < self.properties.max_frame_size.x) {
+            self.srcrect.x += self.properties.frame_increase_size.x;
+        } else {
+            self.srcrect.x = self.properties.frame_size.x;
+            if (self.srcrect.y < self.properties.max_frame_size.y) {
+                self.srcrect.y += self.properties.frame_increase_size.y;
+            } else {
+                self.srcrect.y = self.properties.frame_size.y;
+                self.properties.current_frame = 0;
+                if (!self.properties.is_infinite) self.properties.play = false;
+            }
+        }
+    }
+    
+    /// Plays animation where it is stopped
+    pub fn play(self: *FlipBook) void {
+        self.properties.play = true;
+    } 
+    
+    /// Pauses the animation && resets it
+    pub fn pause(self: *FlipBook) void {
+        self.properties.current_frame = 0;
+        self.properties.play = false;
+        self.srcrect.x = 0;
+        self.srcrect.y = 0;
+        self.timer = 1.0 / @intToFloat(f32, self.properties.fps);
+    }
+
+    /// Stops the animation 
+    pub fn stop(self: *FlipBook) void {
+        self.properties.play = false;
+    }
+
+    /// Resets the animation 
+    pub fn reset(self: *FlipBook) void {
+        self.properties.current_frame = 0;
+        self.srcrect.x = 0;
+        self.srcrect.y = 0;
+        self.timer = 1.0 / @intToFloat(f32, self.properties.fps);
     }
 };

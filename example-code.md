@@ -15,7 +15,7 @@ pub fn build(b: *Builder) void {
 	const target = b.standardTargetOptions(.{});
 	const mode = b.standardReleaseOptions();
 
-	const lib = buildEngine(b, target, mode, enginepath);
+	const lib = buildEngine(b, target, mode, enginepath); // Note: the 'enginepath' should be a relative path!
 	const exe = buildExe(b, target, mode, path, exename, lib, enginepath);
 }
 ```

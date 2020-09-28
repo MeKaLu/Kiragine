@@ -54,6 +54,7 @@ pub fn build(b: *Builder) void {
         exe = buildExe(b, target, mode, "examples/simpleshooter.zig", "simpleshooter", lib, "./");
         exe = buildExe(b, target, mode, "examples/shapedraw.zig", "shapedraw", lib, "./");
         exe = buildExe(b, target, mode, "examples/textures.zig", "textures", lib, "./");
+        exe = buildExe(b, target, mode, "examples/flipbook.zig", "flipbook", lib, "./");
         exe = buildExe(b, target, mode, "examples/particlesystem.zig", "particlesystem", lib, "./");
         exe = buildExe(b, target, mode, "examples/custombatch.zig", "custombatch", lib, "./");
         exe = buildExe(b, target, mode, "examples/logging.zig", "logging", lib, "./");
