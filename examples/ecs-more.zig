@@ -30,10 +30,10 @@ fn draw() !void {
 
 fn systemDeinit(self: *System) !void {
     var i: u64 = 0;
-    while (i < self.filtered_list.count) : (i += 1) {
-        if (!self.filtered_list.items[i].is_exists) continue;
-        const ent = self.filtered_list.items[i].data;
-        try system.removeEntity(ent);
+    while (i < self.entities.count) : (i += 1) {
+        if (!self.entities.items[i].is_exists) continue;
+        const ent = self.entities.items[i].data;
+        try self.removeEntity(ent);
         ent.deinit();
         alloc.destroy(ent);
     }
@@ -48,13 +48,8 @@ pub fn main() !void {
     };
     try engine.init(callbacks, 1024, 768, "ECS", 0, alloc);
 
-    engine.kira.glfw.vsync(false);
-
     try system.init(alloc);
     defer system.deinit();
-
-    system.clearFilter();
-    system.clearEntites();
 
     {
         var entity = try alloc.create(Entity);

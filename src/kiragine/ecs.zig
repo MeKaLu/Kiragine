@@ -86,6 +86,7 @@ pub fn EntityGeneric(comptime complisttype: type) type {
         /// Initializes the entity
         pub fn init(self: *Self, alloc: *std.mem.Allocator) !void {
             self.tags = try UniqueList(u64).init(alloc, 10);
+            self.clearTags();
         }
 
         /// Deinitializes the entity
@@ -155,31 +156,34 @@ pub fn SystemGeneric(comptime entitytype: type) type {
 
         filtered_list: UniqueList(*Entity) = undefined,
         filter_tags: UniqueList(u64) = undefined,
-        entites: UniqueList(*Entity) = undefined,
+        entities: UniqueList(*Entity) = undefined,
 
         /// Initializes the system
         pub fn init(self: *Self, alloc: *std.mem.Allocator) !void {
             self.filter_tags = try UniqueList(u64).init(alloc, 10);
             self.filtered_list = try UniqueList(*Entity).init(alloc, 10);
-            self.entites = try UniqueList(*Entity).init(alloc, 100);
+            self.entities = try UniqueList(*Entity).init(alloc, 100);
+
+            self.clearFilters();
+            self.clearEntites();
         }
 
         /// Deinitializes the system
         pub fn deinit(self: *Self) void {
-            self.entites.deinit();
+            self.entities.deinit();
             self.filtered_list.deinit();
             self.filter_tags.deinit();
         }
 
         /// Clears the filters
-        pub fn clearFilter(self: *Self) void {
+        pub fn clearFilters(self: *Self) void {
             self.filter_tags.clear();
             self.filtered_list.clear();
         }
 
-        /// Clears the entites
+        /// Clears the entities
         pub fn clearEntites(self: *Self) void {
-            self.entites.clear();
+            self.entities.clear();
         }
 
         /// Is entity filtered?
@@ -189,7 +193,7 @@ pub fn SystemGeneric(comptime entitytype: type) type {
 
         /// Is entity exists?
         pub fn hasEntity(self: Self, ent: Entity) bool {
-            return self.entites.isExists(ent);
+            return self.entities.isExists(ent);
         }
 
         /// Adds a filter
@@ -222,11 +226,12 @@ pub fn SystemGeneric(comptime entitytype: type) type {
 
         /// Updates the filters, gets the entities with requires specific filters
         pub fn updateFilters(self: *Self, comptime max: u64) !void {
+            self.filtered_list.clear();
             var i: u64 = 0;
-            while (i < self.entites.count) : (i += 1) {
-                if (self.entites.items[i].is_exists) {
+            while (i < self.entities.count) : (i += 1) {
+                if (self.entities.items[i].is_exists) {
                     // A dirty hack
-                    var ent = self.entites.items[i].data;
+                    var ent = self.entities.items[i].data;
                     const ar = ent.tags.convertToArray(u64, max);
                     const res = ent.requireFilters(max, ar);
                     if (res) {
@@ -239,20 +244,20 @@ pub fn SystemGeneric(comptime entitytype: type) type {
 
         /// Add an entity
         pub fn addEntity(self: *Self, ent: *Entity) !void {
-            try self.entites.insert(ent, true);
+            try self.entities.insert(ent, true);
         }
 
         /// Remove the entity
         pub fn removeEntity(self: *Self, ent: *Entity) Error!void {
-            try self.entites.remove(ent);
+            try self.entities.remove(ent);
         }
 
         /// Get an entity ptr
         pub fn getEntity(self: Self, id: u64) Error!*Entity {
             var i: u64 = 0;
-            while (i < self.entites.count) : (i += 1) {
-                if (self.entites.items[i].is_exists and self.entites.items[i].data.id == id) {
-                    return self.entites.items[i].data;
+            while (i < self.entities.count) : (i += 1) {
+                if (self.entities.items[i].is_exists and self.entities.items[i].data.id == id) {
+                    return self.entities.items[i].data;
                 }
             }
             return Error.Unknown;

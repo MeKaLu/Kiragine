@@ -158,7 +158,7 @@ pub fn ParticleSystemGeneric(maxparticle_count: u32) type {
                 }
             } else {
                 std.log.warn("kiragine -> particle system draw fallbacks to drawing as rectangles", .{});
-                try self.drawAsRectangle();
+                try self.drawAsRectangles();
             }
         }
 
