@@ -25,110 +25,53 @@ const std = @import("std");
 
 const math = @import("kira/math/common.zig");
 
-const UniqueList = @import("kira/utils.zig").UniqueList;
+const UniqueFixedList = @import("kira/utils.zig").UniqueFixedList;
 usingnamespace @import("sharedtypes.zig");
 
-const drawRectangleRotated = @import("renderer.zig").drawRectangleRotated;
-const Rectangle = @import("renderer.zig").Rectangle;
-
-const hash = std.hash.Wyhash.hash;
-
-pub fn Components(seed: u64, comptime prefix: []const u8) type {
-    return struct {
-        pub const Transform = struct {
-            pub const tag = hash(seed, prefix ++ "TransformComponent");
-            position: Vec2f = undefined,
-            size: Vec2f = undefined,
-            origin: Vec2f = undefined,
-            colour: Colour = undefined,
-            /// In degrees
-            rotation: f32 = 0,
-        };
-        pub const Alive = struct {
-            pub const tag = hash(seed, prefix ++ "AliveComponent");
-            is_it: bool = false,
-        };
-
-        transform: Transform = undefined,
-        is_alive: Alive = undefined,
-    };
-}
-
-pub const Logics = struct {
-    /// Draws a rectangle, requires Transform and Alive
-    pub fn drawRectangle(comptime systype: type, self: *systype, comptime transform: type, comptime alive: type) Error!void {
-        var i: u64 = 0;
-        while (i < self.filtered_list.count) : (i += 1) {
-            if (!self.filtered_list.items[i].is_exists) continue;
-            const ent = self.filtered_list.items[i].data;
-
-            const is_alive = try ent.getComponent(alive, "is_alive", alive.tag);
-            if (is_alive.is_it) {
-                const tr = try ent.getComponent(transform, "transform", transform.tag);
-                const colour = tr.colour;
-                const rot = math.deg2radf(tr.rotation);
-                const rect = Rectangle{ .x = tr.position.x, .y = tr.position.y, .width = tr.size.x, .height = tr.size.y };
-                try drawRectangleRotated(rect, tr.origin, rot, colour);
-            }
-        }
-    }
-};
-
-pub fn EntityGeneric(comptime complisttype: type) type {
+pub fn ObjectGeneric(comptime maxtag: u64, comptime complist: type) type {
     return struct {
         const Self = @This();
-        pub const ComponentList = complisttype;
+        pub const ComponentList = complist;
+        pub const MaxTag = maxtag;
+        pub const FixedList = UniqueFixedList(u64, MaxTag);
+        
         id: u64 = undefined,
-
+        tags: FixedList = undefined,
         components: ComponentList = undefined,
-        tags: UniqueList(u64) = undefined,
 
-        /// Initializes the entity
-        pub fn init(self: *Self, alloc: *std.mem.Allocator) !void {
-            self.tags = try UniqueList(u64).init(alloc, 10);
-            self.clearTags();
+        /// Does the tag exists?
+        pub fn hasTag(self: Self, tag: u64) bool {
+            return self.tags.isExists(tag);
         }
 
-        /// Deinitializes the entity
-        pub fn deinit(self: *Self) void {
-            self.tags.deinit();
-        }
-
-        /// Clears the tags within the entity
+        /// Clears the tags
         pub fn clearTags(self: *Self) void {
             self.tags.clear();
         }
 
-        /// Requires the specific component
-        pub fn requireFilter(self: *Self, tag: u64) bool {
-            return self.tags.isExists(tag);
-        }
-
-        /// Requires filters
-        pub fn requireFilters(self: *Self, comptime max: u64, tags: [max]u64) bool {
+        pub fn addTags(self: *Self, tags: [MaxTag]u64) Error!void {
             var i: u64 = 0;
-            while (i < max) : (i += 1) {
-                if (!self.tags.isExists(tags[i])) return false;
+            while (i < MaxTag) : (i += 1) {
+                _ = try self.tags.insert(tags[i]);
             }
-            return true;
         }
 
-        /// Adds a component to the entity
-        pub fn addComponent(self: *Self, comptime comptype: type, comptime compname: []const u8, component: comptype, tag: u64) !void {
+        /// Adds a component to the object
+        pub fn addComponent(self: *Self, comptime comptype: type, comptime compname: []const u8, component: comptype, tag: u64) Error!void {
             comptime {
                 if (!@hasField(ComponentList, compname)) @compileError("Unknown component type " ++ compname ++ "!");
             }
 
-            try self.tags.insert(tag, true);
+            _ = try self.tags.insert(tag);
             @field(self.components, compname) = component;
         }
 
-        /// Removes a component to the entity
+        /// Removes a component to the object
         pub fn removeComponent(self: *Self, tag: u64) Error!void {
             try self.tags.remove(tag);
         }
 
-        /// Gets a component to the entity
+        /// Gets a component to the object
         pub fn getComponent(self: Self, comptime comptype: type, comptime compname: []const u8, tag: u64) Error!comptype {
             comptime {
                 if (!@hasField(ComponentList, compname)) @compileError("Unknown component type " ++ compname ++ "!");
@@ -139,7 +82,7 @@ pub fn EntityGeneric(comptime complisttype: type) type {
         }
 
         /// Replaces a component
-        pub fn replaceComponent(self: *Self, comptime comptype: type, comptime compname: []const u8, component: comptype, tag: u64) !void {
+        pub fn replaceComponent(self: *Self, comptime comptype: type, comptime compname: []const u8, component: comptype, tag: u64) Error!void {
             comptime {
                 if (!@hasField(ComponentList, compname)) @compileError("Unknown component type " ++ compname ++ "!");
             }
@@ -149,118 +92,109 @@ pub fn EntityGeneric(comptime complisttype: type) type {
     };
 }
 
-pub fn SystemGeneric(comptime entitytype: type) type {
+pub fn WorldGeneric(comptime max_object: u64, comptime max_filter: u64, comptime object: type) type {
     return struct {
         const Self = @This();
-        pub const Entity = entitytype;
+        pub const Object = object;
+        pub const MaxObject = max_object;
+        pub const MaxFilter = max_filter;
 
-        filtered_list: UniqueList(*Entity) = undefined,
-        filter_tags: UniqueList(u64) = undefined,
-        entities: UniqueList(*Entity) = undefined,
+        objectlist: [MaxObject]Object = undefined,
+        objectidlist: UniqueFixedList(u64, MaxObject) = undefined,
 
-        /// Initializes the system
-        pub fn init(self: *Self, alloc: *std.mem.Allocator) !void {
-            self.filter_tags = try UniqueList(u64).init(alloc, 10);
-            self.filtered_list = try UniqueList(*Entity).init(alloc, 10);
-            self.entities = try UniqueList(*Entity).init(alloc, 100);
+        filteredlist: [MaxObject]*Object = undefined,
+        filteredidlist: UniqueFixedList(u64, MaxObject) = undefined,
 
-            self.clearFilters();
-            self.clearEntites();
+        filters: UniqueFixedList(u64, MaxFilter) = undefined,
+
+        /// Does the object exists?
+        pub fn hasObject(self: Self, id: u64) bool {
+            return self.objectidlist.isExists(id);
+        }
+        
+        /// Does the object exists in the filters?
+        pub fn hasObjectInFilters(self: Self, id: u64) bool {
+            return self.filteredidlist.isExists(id);
         }
 
-        /// Deinitializes the system
-        pub fn deinit(self: *Self) void {
-            self.entities.deinit();
-            self.filtered_list.deinit();
-            self.filter_tags.deinit();
+        /// Does the filter exists?
+        pub fn hasFilter(self: Self, filter: u64) bool {
+            return self.filters.isExists(filter);
+        }
+        
+        /// Does the filters exists?
+        pub fn hasFilters(self: *Self, comptime max: u64, tags: [max]u64) bool {
+            var i: u64 = 0;
+            while (i < max) : (i += 1) {
+                if (!self.filters.isExists(tags[i])) return false;
+            }
+            return true;
         }
 
-        /// Clears the filters
+        /// Clears the objects
+        pub fn clearObjects(self: *Self) void {
+            self.objectidlist.clear();
+            self.filteredidlist.clear();
+
+            self.objectlist = undefined;
+            self.filteredlist = undefined;
+        }
+        
+        /// Clears the filtered objects 
+        pub fn clearFilteredObjects(self: *Self) void {
+            self.filteredidlist.clear();
+            self.filteredlist = undefined;
+        }
+
+        /// Clears the filters        
         pub fn clearFilters(self: *Self) void {
-            self.filter_tags.clear();
-            self.filtered_list.clear();
+            self.filters.clear();
         }
 
-        /// Clears the entities
-        pub fn clearEntites(self: *Self) void {
-            self.entities.clear();
+        /// Adds an object
+        pub fn addObject(self: *Self, obj: Object) Error!void {
+            if (self.objectidlist.isExists(obj.id)) return Error.Duplicate;
+            const i = try self.objectidlist.insert(obj.id);
+            self.objectlist[i] = obj;
         }
 
-        /// Is entity filtered?
-        pub fn hasFiltered(self: Self, ent: Entity) bool {
-            return self.filtered_list.isExists(ent);
-        }
-
-        /// Is entity exists?
-        pub fn hasEntity(self: Self, ent: Entity) bool {
-            return self.entities.isExists(ent);
+        /// Force pushes the object in to the filtered list
+        pub fn forceObjectToFilter(self: *Self, id: u64) Error!void {
+            if (!self.objectidlist.isExists(id)) return Error.Unknown;
+            if (self.filteredidlist.isExists(id)) return Error.Duplicate;
+            
+            const index = try self.objectidlist.getIndex(id);
+            var ptr = &self.objectlist[index];
+            const i = try self.filteredidlist.insert(id);
+            self.filteredlist[i] = ptr;
         }
 
         /// Adds a filter
-        pub fn addFilter(self: *Self, tag: u64) !void {
-            try self.filter_tags.insert(tag, true);
-        }
+        pub fn addFilter(self: *Self, filter: u64) Error!void {
+            _ = try self.filters.insert(filter);
+        } 
 
-        /// Adds filters
-        pub fn addFilters(self: *Self, comptime max: u64, tags: [max]u64) !void {
+        /// Filter the objects
+        pub fn filterObjects(self: *Self) Error!void {
+            self.clearFilteredObjects();
             var i: u64 = 0;
-            while (i < max) : (i += 1) {
-                try self.filter_tags.insert(tags[i], true);
-            }
-        }
-
-        /// Require a filter
-        pub fn requireFilter(self: *Self, tag: u64) bool {
-            if (!self.filter_tags.isExists(tag)) return false;
-            return true;
-        }
-
-        /// Requires filters
-        pub fn requireFilters(self: *Self, comptime max: u64, tags: [max]u64) bool {
-            var i: u64 = 0;
-            while (i < max) : (i += 1) {
-                if (!self.filter_tags.isExists(tags[i])) return false;
-            }
-            return true;
-        }
-
-        /// Updates the filters, gets the entities with requires specific filters
-        pub fn updateFilters(self: *Self, comptime max: u64) !void {
-            self.filtered_list.clear();
-            var i: u64 = 0;
-            while (i < self.entities.count) : (i += 1) {
-                if (self.entities.items[i].is_exists) {
-                    // A dirty hack
-                    var ent = self.entities.items[i].data;
-                    const ar = ent.tags.convertToArray(u64, max);
-                    const res = ent.requireFilters(max, ar);
-                    if (res) {
-                        try self.filtered_list.insert(ent, true);
+            while (i < Self.MaxObject) : (i += 1) {
+                if (self.objectidlist.items[i].is_exists) {
+                    var obj = &self.objectlist[i];
+                    var j: u64 = 0;
+                    var yes = true;
+                    while (j < Self.MaxFilter) : (j += 1) {
+                        if (self.filters.items[j].is_exists) {
+                            const filter = self.filters.items[j].data;
+                            if (!obj.hasTag(filter)) yes = false;
+                        }
+                    }
+                    if (yes) {
+                        try self.forceObjectToFilter(obj.id);
                     }
                 }
             }
-            if (self.filtered_list.count == 0) return Error.FailedToAdd;
-        }
-
-        /// Add an entity
-        pub fn addEntity(self: *Self, ent: *Entity) !void {
-            try self.entities.insert(ent, true);
-        }
-
-        /// Remove the entity
-        pub fn removeEntity(self: *Self, ent: *Entity) Error!void {
-            try self.entities.remove(ent);
-        }
-
-        /// Get an entity ptr
-        pub fn getEntity(self: Self, id: u64) Error!*Entity {
-            var i: u64 = 0;
-            while (i < self.entities.count) : (i += 1) {
-                if (self.entities.items[i].is_exists and self.entities.items[i].data.id == id) {
-                    return self.entities.items[i].data;
-                }
-            }
-            return Error.Unknown;
+            if (self.filteredidlist.count == 0) return Error.FailedToAdd;
         }
     };
 }

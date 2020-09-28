@@ -238,3 +238,93 @@ pub fn UniqueList(comptime T: type) type {
         }
     };
 }
+
+pub fn UniqueFixedList(comptime typ: type, comptime max: u64) type {
+    return struct {
+        const Self = @This();
+        pub const T = typ;
+        pub const Max = max;
+
+        pub const Item = struct {
+            data: typ = undefined,
+            is_exists: bool = false,
+        };
+
+        items: [Max]Item = undefined,
+        count: u64 = 0,
+
+        /// Clears the list
+        pub fn clear(self: *Self) void {
+            var i: u64 = 0;
+            while (i < Self.Max) : (i += 1) {
+                self.items[i].is_exists = false;
+                self.items[i].data = undefined;
+            }
+            self.count = 0;
+        }
+
+        /// Insert an item, it fails if the item was a duplicate
+        /// Returns the index
+        pub fn insert(self: *Self, item: typ) Error!u64 {
+            var i: u64 = 0;
+            while (i < Self.Max) : (i += 1) {
+                if (self.items[i].is_exists and self.items[i].data == item) {
+                    return Error.Duplicate;
+                } else if (!self.items[i].is_exists) {
+                    self.items[i].data = item;
+                    self.items[i].is_exists = true;
+                    self.count += 1;
+                    return i;
+                }
+            }
+            return Error.FailedToAdd;
+        }
+
+        /// Remove an item
+        pub fn remove(self: *Self, item: typ) Error!void {
+            var i: u64 = 0;
+            while (i < Self.Max) : (i += 1) {
+                if (self.items[i].is_exists and self.items[i].data == item) {
+                    self.items[i].is_exists = false;
+                    self.items[i].data = undefined;
+                    return;
+                }
+            }
+            return Error.Unknown;
+        }
+
+        /// Get an item index
+        pub fn getIndex(self: Self, item: typ) Error!u64 {
+            var i: u64 = 0;
+            while (i < Self.Max) : (i += 1) {
+                if (self.items[i].is_exists and self.items[i].data == item) {
+                    return i;
+                }
+            }
+            return Error.Unknown;
+        }
+
+        /// Does the data exists?
+        pub fn isExists(self: Self, item: typ) bool {
+            var i: u64 = 0;
+            while (i < Self.Max) : (i += 1) {
+                if (self.items[i].is_exists and self.items[i].data == item) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// Turn the existing data into array
+        pub fn convertToArray(self: Self, comptime tp: type, comptime len: u64) [len]tp {
+            var result: [len]typ = undefined;
+            var i: u64 = 0;
+            while (i < Self.Max) : (i += 1) {
+                if (self.items[i].is_exists) {
+                    result[i] = self.items[i].data;
+                }
+            }
+            return result;
+        }
+    };
+}
