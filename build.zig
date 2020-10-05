@@ -34,6 +34,7 @@ pub fn build(b: *Builder) void {
 
     const examples = b.option(bool, "examples", "Compile examples?") orelse false;
     const tests = b.option(bool, "tests", "Compile tests?") orelse false;
+    strip = b.option(bool, "strip", "Strip the exe?") orelse false;
 
     var exe: *Build.LibExeObjStep = undefined;
     var run_cmd: *Build.RunStep = undefined;
@@ -44,6 +45,7 @@ pub fn build(b: *Builder) void {
     if (tests) {
         exe = buildExe(b, target, mode, "src/tests/atlaspacker.zig", "test-atlaspacker", lib, "./");
         exe = buildExe(b, target, mode, "src/tests/list.zig", "test-list", lib, "./");
+        exe = buildExe(b, target, mode, "src/tests/font.zig", "test-font", lib, "./");
     }
 
     if (examples) {

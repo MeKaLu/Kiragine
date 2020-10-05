@@ -307,8 +307,7 @@ pub fn main() !void {
         try playerbulletfactory.draw(batch);
 
         try batch.draw(gl.DrawMode.triangles);
-        defer batch.vertex_list = undefined;
-        defer batch.index_list = undefined;
+        defer batch.cleanAll();
         defer batch.submission_counter = 0;
 
         glfw.sync(win.handle);

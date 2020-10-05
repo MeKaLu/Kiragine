@@ -455,12 +455,10 @@ pub fn popBatch2D() Error!void {
         prenderer2D.cam.detach();
         if (prenderer2D.textured) {
             prenderer2D.current_quadbatch_texture.submission_counter = 0;
-            prenderer2D.current_quadbatch_texture.vertex_list = undefined;
-            prenderer2D.current_quadbatch_texture.index_list = undefined;
+            prenderer2D.current_quadbatch_texture.cleanAll();
         } else {
             prenderer2D.current_quadbatch_notexture.submission_counter = 0;
-            prenderer2D.current_quadbatch_notexture.vertex_list = undefined;
-            prenderer2D.current_quadbatch_notexture.index_list = undefined;
+            prenderer2D.current_quadbatch_notexture.cleanAll();
         }
     }
 

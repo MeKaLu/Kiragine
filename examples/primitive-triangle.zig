@@ -44,7 +44,7 @@ pub fn main() !void {
     var window = kira_window.Info{};
     var frametime = kira_window.FrameTime{};
     var fps = kira_window.FpsDirect{};
-    window.title = "Primtive Triangle Example";
+    window.title = "Primitive Triangle Example";
     window.callbacks.close = closeCallback;
     window.callbacks.resize = resizeCallback;
     const sw = kira_glfw.getScreenWidth();

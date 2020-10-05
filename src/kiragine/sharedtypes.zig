@@ -166,7 +166,6 @@ pub const Rectangle = struct {
     }
 };
 
-
 pub const Texture = struct {
     id: u32 = 0,
     width: i32 = 0,
@@ -273,7 +272,7 @@ pub const FlipBook = struct {
         if (self.timer > 0.0) {
             self.timer -= 1 * dt;
             return;
-        } 
+        }
         self.timer = 1.0 / @intToFloat(f32, self.properties.fps);
         self.properties.current_frame += 1;
         if (self.srcrect.x < self.properties.max_frame_size.x) {
@@ -289,12 +288,12 @@ pub const FlipBook = struct {
             }
         }
     }
-    
+
     /// Plays animation where it is stopped
     pub fn play(self: *FlipBook) void {
         self.properties.play = true;
-    } 
-    
+    }
+
     /// Pauses the animation && resets it
     pub fn pause(self: *FlipBook) void {
         self.properties.current_frame = 0;

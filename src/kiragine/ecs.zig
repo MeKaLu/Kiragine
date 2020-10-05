@@ -34,7 +34,7 @@ pub fn ObjectGeneric(comptime maxtag: u64, comptime complist: type) type {
         pub const ComponentList = complist;
         pub const MaxTag = maxtag;
         pub const FixedList = UniqueFixedList(u64, MaxTag);
-        
+
         id: u64 = undefined,
         tags: FixedList = undefined,
         components: ComponentList = undefined,
@@ -111,7 +111,7 @@ pub fn WorldGeneric(comptime max_object: u64, comptime max_filter: u64, comptime
         pub fn hasObject(self: Self, id: u64) bool {
             return self.objectidlist.isExists(id);
         }
-        
+
         /// Does the object exists in the filters?
         pub fn hasObjectInFilters(self: Self, id: u64) bool {
             return self.filteredidlist.isExists(id);
@@ -121,7 +121,7 @@ pub fn WorldGeneric(comptime max_object: u64, comptime max_filter: u64, comptime
         pub fn hasFilter(self: Self, filter: u64) bool {
             return self.filters.isExists(filter);
         }
-        
+
         /// Does the filters exists?
         pub fn hasFilters(self: *Self, comptime max: u64, tags: [max]u64) bool {
             var i: u64 = 0;
@@ -139,7 +139,7 @@ pub fn WorldGeneric(comptime max_object: u64, comptime max_filter: u64, comptime
             self.objectlist = undefined;
             self.filteredlist = undefined;
         }
-        
+
         /// Clears the filtered objects 
         pub fn clearFilteredObjects(self: *Self) void {
             self.filteredidlist.clear();
@@ -162,7 +162,7 @@ pub fn WorldGeneric(comptime max_object: u64, comptime max_filter: u64, comptime
         pub fn forceObjectToFilter(self: *Self, id: u64) Error!void {
             if (!self.objectidlist.isExists(id)) return Error.Unknown;
             if (self.filteredidlist.isExists(id)) return Error.Duplicate;
-            
+
             const index = try self.objectidlist.getIndex(id);
             var ptr = &self.objectlist[index];
             const i = try self.filteredidlist.insert(id);
@@ -172,7 +172,7 @@ pub fn WorldGeneric(comptime max_object: u64, comptime max_filter: u64, comptime
         /// Adds a filter
         pub fn addFilter(self: *Self, filter: u64) Error!void {
             _ = try self.filters.insert(filter);
-        } 
+        }
 
         /// Filter the objects
         pub fn filterObjects(self: *Self) Error!void {

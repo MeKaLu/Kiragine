@@ -181,6 +181,21 @@ pub fn BatchGeneric(max_object: u32, max_index: u32, max_vertex: u32, comptime v
             return Error.UnknownSubmitFn;
         }
 
+        /// Cleans the lists
+        pub fn cleanAll(self: *Self) void {
+            var i: u32 = 0;
+            while (i < Self.max_object_count) : (i += 1) {
+                var j: u32 = 0;
+                while (j < Self.max_index_count) : (j += 1) {
+                    self.index_list[i][j] = 0;
+                }
+                j = 0;
+                while (j < Self.max_vertex_count) : (j += 1) {
+                    self.vertex_list[i][j] = .{};
+                }
+            }
+        }
+
         /// Draw the submitted objects
         pub fn draw(self: Self, drawmode: gl.DrawMode) Error!void {
             if (self.submission_counter > Self.max_object_count) return Error.ObjectOverflow;

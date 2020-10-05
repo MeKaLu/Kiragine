@@ -15,7 +15,7 @@ const ComponentTags = enum {
 };
 
 const MaxObjectTag = 3;
-const MaxObject = 1024 * 5;
+const MaxObject = 1024 * 100;
 const MaxFilter = 10;
 const Object = engine.ecs.ObjectGeneric(MaxObjectTag, ComponentList);
 const World = engine.ecs.WorldGeneric(MaxObject, MaxFilter, Object);
@@ -29,7 +29,7 @@ pub fn main() !void {
         .fixed = fupdate,
     };
     try engine.init(callbacks, 1024, 768, "ECS", 0, alloc);
-    
+
     world.clearObjects();
     world.clearFilters();
     try world.addFilter(@enumToInt(ComponentTags.rectangle));
@@ -38,15 +38,15 @@ pub fn main() !void {
 
     var i: u64 = 0;
     while (i < MaxObject) : (i += 1) {
-        var object = Object{.id = i};
+        var object = Object{ .id = i };
         object.clearTags();
         object.components = .{
-            .rect = .{.x = @intToFloat(f32, i * i), .y = 200, .width = 30, .height = 32},
-            .motion = .{.x = 0, .y = 150},
+            .rect = .{ .x = @intToFloat(f32, i * i), .y = 200, .width = 30, .height = 32 },
+            .motion = .{ .x = 0, .y = 150 },
             .is_alive = true,
         };
-        
-        try object.addTags([MaxObjectTag]u64{@enumToInt(ComponentTags.isAlive), @enumToInt(ComponentTags.motion), @enumToInt(ComponentTags.rectangle)});
+
+        try object.addTags([MaxObjectTag]u64{ @enumToInt(ComponentTags.isAlive), @enumToInt(ComponentTags.motion), @enumToInt(ComponentTags.rectangle) });
         try world.addObject(object);
     }
 
@@ -56,12 +56,12 @@ pub fn main() !void {
 
     try engine.open();
     try engine.update();
-    
+
     try engine.deinit();
 }
 
 fn fupdate(fdt: f32) !void {
-    if (world.hasFilters(3, [3]u64{@enumToInt(ComponentTags.isAlive), @enumToInt(ComponentTags.motion), @enumToInt(ComponentTags.rectangle)}))
+    if (world.hasFilters(3, [3]u64{ @enumToInt(ComponentTags.isAlive), @enumToInt(ComponentTags.motion), @enumToInt(ComponentTags.rectangle) }))
         try systemMotion(&world, fdt);
 
     std.log.emerg("fps: {}", .{engine.getFps()});
@@ -72,9 +72,9 @@ fn draw() !void {
 
     try engine.pushBatch2D(engine.Renderer2DBatchTag.quads);
 
-    if (world.hasFilters(2, [2]u64{@enumToInt(ComponentTags.isAlive), @enumToInt(ComponentTags.rectangle)}))
+    if (world.hasFilters(2, [2]u64{ @enumToInt(ComponentTags.isAlive), @enumToInt(ComponentTags.rectangle) }))
         try systemDrawRectangle(&world);
-    
+
     try engine.popBatch2D();
 }
 
@@ -105,7 +105,7 @@ fn systemDrawRectangle(self: *World) engine.Error!void {
         const is_alive = try ent.getComponent(bool, "is_alive", @enumToInt(ComponentTags.isAlive));
         if (is_alive) {
             const rect = try ent.getComponent(engine.Rectangle, "rect", @enumToInt(ComponentTags.rectangle));
-            try engine.drawRectangle(rect, .{.r = 1, .g = 1, .b = 1, .a = 1});
+            try engine.drawRectangle(rect, .{ .r = 1, .g = 1, .b = 1, .a = 1 });
         }
     }
 }

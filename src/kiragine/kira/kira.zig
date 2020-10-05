@@ -29,5 +29,7 @@ pub const input = @import("input.zig");
 pub const window = @import("window.zig");
 pub const renderer = @import("renderer.zig");
 
+pub const ft2 = @import("freetype2.zig");
+
 pub const math = @import("math/math.zig");
 pub const log = @import("log.zig");

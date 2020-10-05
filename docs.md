@@ -64,6 +64,17 @@
 
 --> `UnknownSubmitFn`
 
+* 'thing' already exists in the other 'thing', cannot add one more time
+
+--> Duplicate,
+
+* Unknown 'thing', corrupted or invalid
+
+--> `Unknown`
+
+* Failed to add 'thing'
+
+--> `FailedToAdd`
 ---
 ### Model matrix, helper type
 ```zig

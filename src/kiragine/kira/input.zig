@@ -188,8 +188,8 @@ pub const Info = struct {
         var r: rtype = undefined;
         if (left == .down) r -= 1;
         if (right == .down) r += 1;
-        return r; 
-    } 
+        return r;
+    }
 
     /// Handles the inputs
     /// Warning: Call just before polling/processing the events

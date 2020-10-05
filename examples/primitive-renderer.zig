@@ -136,9 +136,8 @@ pub fn main() !void {
     while (window_running) {
         frametime.start();
 
+        batch.cleanAll();
         batch.submission_counter = 0;
-        batch.vertex_list = undefined;
-        batch.index_list = undefined;
 
         posx += @floatCast(f32, targetfps) * 100;
 
