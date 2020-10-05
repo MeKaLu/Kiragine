@@ -67,8 +67,7 @@ pub const TextureType = enum {
 // zig fmt: off
 /// Texture formats
 pub const TextureFormat = enum {
-    rgb, rgb8, rgb32f, rgba, rgba8, rgba32f, 
-    red, alpha
+    rgb, rgb8, rgb32f, rgba, rgba8, rgba32f, red, alpha
 };
 // zig fmt: on
 

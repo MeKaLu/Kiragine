@@ -9,9 +9,9 @@ const targetfps = 60;
 
 var flipbook = engine.FlipBook{
     .properties = .{
-        .frame_size = .{.x = 16, .y = 19},
-        .max_frame_size = .{.x = 16 * 4, .y = 19},
-        .frame_increase_size = .{.x = 16, .y = 19},
+        .frame_size = .{ .x = 16, .y = 19 },
+        .max_frame_size = .{ .x = 16 * 4, .y = 19 },
+        .frame_increase_size = .{ .x = 16, .y = 19 },
         .fps = 10,
     },
     .srcrect = &srcrect,
@@ -47,13 +47,13 @@ pub fn main() !void {
 
     const t = @embedFile("../assets/flipbook.png");
     var texture = try engine.Texture.createFromPNGMemory(t);
-    
+
     // Enable the texture batch with given texture
     engine.enableTextureBatch2D(texture);
 
     try engine.open();
     try engine.update();
-    
+
     // Disable the texture batch
     engine.disableTextureBatch2D();
 

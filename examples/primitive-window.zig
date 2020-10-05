@@ -80,7 +80,7 @@ pub fn main() !void {
             frametime.sleep(targetfps);
 
             fps = fps.calculate(frametime);
-            std.log.notice("FPS: {}", .{fps.fps}); 
+            std.log.notice("FPS: {}", .{fps.fps});
         }
     }
 }
