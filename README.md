@@ -11,20 +11,20 @@ Get started [now](https://github.com/Kiakra/Kiragine/blob/master/example-code.md
 - [x] Single window operations
 - [x] Input management
 - [x] Simple ecs
-- [] Asset manager
-- [] 2D Renderer:
+- [ ] Asset manager
+- [ ] 2D Renderer:
     - [x] Flipbook 
     - [x] Camera
     - [x] Shape drawing
     - [x] Texture drawing
-    - [] Text drawing 
-    - [] GUI system
-    - [] Vulkan implementation
-- [] Audio
-- [] Android support
-- [] Optional: scripting language 
-- [] Optional: advanced integrated ecs 
-- [] Optional: splash screen 
+    - [ ] Text drawing 
+    - [ ] GUI system
+    - [ ] Vulkan implementation
+- [ ] Audio
+- [ ] Android support
+- [ ] Optional: scripting language 
+- [ ] Optional: advanced integrated ecs 
+- [ ] Optional: splash screen 
 
 ## About release cycle
 * Versioning: major.minor.patch</li>
