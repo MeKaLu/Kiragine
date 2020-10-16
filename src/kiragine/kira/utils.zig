@@ -197,6 +197,7 @@ pub fn UniqueList(comptime T: type) type {
                 if (self.items[i].is_exists and self.items[i].data == item) {
                     self.items[i].is_exists = false;
                     self.items[i].data = undefined;
+                    self.count -= 1;
                     return;
                 }
             }
@@ -287,6 +288,7 @@ pub fn UniqueFixedList(comptime typ: type, comptime max: u64) type {
                 if (self.items[i].is_exists and self.items[i].data == item) {
                     self.items[i].is_exists = false;
                     self.items[i].data = undefined;
+                    self.count -= 1;
                     return;
                 }
             }

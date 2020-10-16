@@ -34,36 +34,43 @@ pub fn build(b: *Builder) void {
 
     const examples = b.option(bool, "examples", "Compile examples?") orelse false;
     const tests = b.option(bool, "tests", "Compile tests?") orelse false;
+    const tools = b.option(bool, "tools", "Compile tools?") orelse false;
     strip = b.option(bool, "strip", "Strip the exe?") orelse false;
 
     var exe: *Build.LibExeObjStep = undefined;
     var run_cmd: *Build.RunStep = undefined;
     var run_step: *Build.Step = undefined;
 
-    const lib = buildEngine(b, target, mode, "./");
+    const enginepath = "./";
+    const lib = buildEngine(b, target, mode, enginepath);
 
     if (tests) {
-        exe = buildExe(b, target, mode, "src/tests/atlaspacker.zig", "test-atlaspacker", lib, "./");
-        exe = buildExe(b, target, mode, "src/tests/list.zig", "test-list", lib, "./");
-        exe = buildExe(b, target, mode, "src/tests/font.zig", "test-font", lib, "./");
+        exe = buildExe(b, target, mode, "src/tests/leaktest.zig", "test-leak", lib, enginepath);
+        exe = buildExe(b, target, mode, "src/tests/atlaspacker.zig", "test-atlaspacker", lib, enginepath);
+        exe = buildExe(b, target, mode, "src/tests/list.zig", "test-list", lib, enginepath);
+        exe = buildExe(b, target, mode, "src/tests/font.zig", "test-font", lib, enginepath);
+    }
+
+    if (tools) {
+        exe = buildExePrimitive(b, target, mode, "tools/assetpacker.zig", "tool-assetpacker", lib, enginepath);
     }
 
     if (examples) {
-        exe = buildExe(b, target, mode, "examples/ecs.zig", "ecs", lib, "./");
-        exe = buildExe(b, target, mode, "examples/pong.zig", "pong", lib, "./");
-        exe = buildExe(b, target, mode, "examples/packer.zig", "packer", lib, "./");
-        exe = buildExe(b, target, mode, "examples/collision.zig", "collision", lib, "./");
-        exe = buildExe(b, target, mode, "examples/simpleshooter.zig", "simpleshooter", lib, "./");
-        exe = buildExe(b, target, mode, "examples/shapedraw.zig", "shapedraw", lib, "./");
-        exe = buildExe(b, target, mode, "examples/textures.zig", "textures", lib, "./");
-        exe = buildExe(b, target, mode, "examples/flipbook.zig", "flipbook", lib, "./");
-        exe = buildExe(b, target, mode, "examples/particlesystem.zig", "particlesystem", lib, "./");
-        exe = buildExe(b, target, mode, "examples/custombatch.zig", "custombatch", lib, "./");
-        exe = buildExe(b, target, mode, "examples/logging.zig", "logging", lib, "./");
+        exe = buildExe(b, target, mode, "examples/ecs.zig", "ecs", lib, enginepath);
+        exe = buildExe(b, target, mode, "examples/pong.zig", "pong", lib, enginepath);
+        exe = buildExe(b, target, mode, "examples/packer.zig", "packer", lib, enginepath);
+        exe = buildExe(b, target, mode, "examples/collision.zig", "collision", lib, enginepath);
+        exe = buildExe(b, target, mode, "examples/simpleshooter.zig", "simpleshooter", lib, enginepath);
+        exe = buildExe(b, target, mode, "examples/shapedraw.zig", "shapedraw", lib, enginepath);
+        exe = buildExe(b, target, mode, "examples/textures.zig", "textures", lib, enginepath);
+        exe = buildExe(b, target, mode, "examples/flipbook.zig", "flipbook", lib, enginepath);
+        exe = buildExe(b, target, mode, "examples/particlesystem.zig", "particlesystem", lib, enginepath);
+        exe = buildExe(b, target, mode, "examples/custombatch.zig", "custombatch", lib, enginepath);
+        exe = buildExe(b, target, mode, "examples/logging.zig", "logging", lib, enginepath);
 
-        exe = buildExePrimitive(b, target, mode, "examples/primitive-simpleshooter.zig", "primitive-simpleshooter", lib, "./");
-        exe = buildExePrimitive(b, target, mode, "examples/primitive-window.zig", "primitive-window", lib, "./");
-        exe = buildExePrimitive(b, target, mode, "examples/primitive-renderer.zig", "primitive-renderer", lib, "./");
-        exe = buildExePrimitive(b, target, mode, "examples/primitive-triangle.zig", "primitive-triangle", lib, "./");
+        exe = buildExePrimitive(b, target, mode, "examples/primitive-simpleshooter.zig", "primitive-simpleshooter", lib, enginepath);
+        exe = buildExePrimitive(b, target, mode, "examples/primitive-window.zig", "primitive-window", lib, enginepath);
+        exe = buildExePrimitive(b, target, mode, "examples/primitive-renderer.zig", "primitive-renderer", lib, enginepath);
+        exe = buildExePrimitive(b, target, mode, "examples/primitive-triangle.zig", "primitive-triangle", lib, enginepath);
     }
 }
