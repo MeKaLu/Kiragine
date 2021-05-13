@@ -1,6 +1,8 @@
 # Kiragine
 I am now working on another engine, i hope it'll be the successor of this engine. It has the same fundamentals but slightly different approach. I won't make you wait longer than a month or two until it's ready to release, once it release i'll put a link here and archive this repository.
 
+Edit: [New engine, this is discontinued](https://github.com/Kiakra/Alka)
+
 
 Game engine written in zig, compatible with **master branch**.
 
